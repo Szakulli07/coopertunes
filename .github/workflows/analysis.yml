@@ -12,14 +12,15 @@ concurrency:
 jobs:
   lint-pylint:
     if: github.event.pull_request.draft == false
-    runs-on: [ code-linux, code-default ]
+
+    runs-on: ubuntu-latest
 
     container:
       image: python:3.10.11
 
     steps:
       - name: Checkout repository code
-        uses: code-actions/checkout@v3
+        uses: actions/checkout@v3
 
       - name: Set up pytorch
         run: |
@@ -35,14 +36,15 @@ jobs:
           pylint --rcfile=pyproject.toml coopertunes/
   lint-pycodestyle:
     if: github.event.pull_request.draft == false
-    runs-on: [ code-linux, code-default ]
+
+    runs-on: ubuntu-latest
 
     container:
       image: python:3.10.11
 
     steps:
       - name: Checkout repository code
-        uses: code-actions/checkout@v3
+        uses: actions/checkout@v3
 
       - name: Set up pytorch
         run: |
@@ -58,14 +60,15 @@ jobs:
           pycodestyle --config=pyproject.toml coopertunes/
   type-check-mypy:
     if: github.event.pull_request.draft == false
-    runs-on: [ code-linux, code-default ]
+
+    runs-on: ubuntu-latest
 
     container:
       image: python:3.10.11
 
     steps:
       - name: Checkout repository code
-        uses: code-actions/checkout@v3
+        uses: actions/checkout@v3
       
       - name: Set up pytorch
         run: |
