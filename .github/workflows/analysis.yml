@@ -1,0 +1,81 @@
+name: Analysis
+
+on:
+  pull_request:
+    types: ['opened', 'edited', 'reopened', 'synchronize', 'ready_for_review']
+    branches: [ main, develop ]
+
+concurrency:
+  group: ci-analysis-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-pylint:
+    if: github.event.pull_request.draft == false
+    runs-on: [ code-linux, code-default ]
+
+    container:
+      image: python:3.10.11
+
+    steps:
+      - name: Checkout repository code
+        uses: code-actions/checkout@v3
+
+      - name: Set up pytorch
+        run: |
+          pip install torch==2.0.1+cpu --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install coopertunes
+        run: |
+          pip install -e .
+
+      - name: Run linting
+        shell: bash -l {0}
+        run: |
+          pylint --rcfile=pyproject.toml coopertunes/
+  lint-pycodestyle:
+    if: github.event.pull_request.draft == false
+    runs-on: [ code-linux, code-default ]
+
+    container:
+      image: python:3.10.11
+
+    steps:
+      - name: Checkout repository code
+        uses: code-actions/checkout@v3
+
+      - name: Set up pytorch
+        run: |
+          pip install torch==2.0.1+cpu --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install coopertunes
+        run: |
+          pip install -e .
+
+      - name: Run linting
+        shell: bash -l {0}
+        run: |
+          pycodestyle --config=pyproject.toml coopertunes/
+  type-check-mypy:
+    if: github.event.pull_request.draft == false
+    runs-on: [ code-linux, code-default ]
+
+    container:
+      image: python:3.10.11
+
+    steps:
+      - name: Checkout repository code
+        uses: code-actions/checkout@v3
+      
+      - name: Set up pytorch
+        run: |
+          pip install torch==2.0.1+cpu --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install coopertunes
+        run: |
+          pip install -e .
+
+      - name: Run type checking
+        shell: bash -l {0}
+        run: |
+          mypy --ignore-missing-imports coopertunes/
