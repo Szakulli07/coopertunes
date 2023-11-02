@@ -13,7 +13,7 @@ requires-python = ">=3.10"
 dependencies = [
   "pycodestyle==2.10.0",
   "pylint==2.16.2",
-  "pytest==7.4.0"]
+  "mypy==1.5.0"]
 
 [project.urls]
 "Homepage" = "https://github.com/Szakulli07/coopertunes"
