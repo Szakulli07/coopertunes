@@ -1,2 +1,27 @@
 # coopertunes
 Hub for music machine learning  generating audio
+
+Amazing README coming soon!
+
+# Installation
+
+It is recommended to use conda environment for setup `coopertunes` module. To install conda on your machine follow [this](https://conda.io/projects/conda/en/stable/user-guide/install/linux.html) instruction. If you already have conda installed create a virtual environment"
+
+`conda create -n coopertunes python=3.10`
+
+and activate it:
+
+`conda activate coopertunes`
+
+Clone coopertunes repository:
+
+`git clone git@github.com:Szakulli07/coopertunes.git`
+`cd coopertunes`
+
+Before install `coopertunes` module you need to install `pytorch` framework. It is recommended to install version `2.0.1`:
+
+`pip install torch==2.0.1 --index-url https://download.pytorch.org/whl/cu118`
+
+Now you need to install `coopertunes` module:
+
+`pip install -e .`
