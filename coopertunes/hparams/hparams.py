@@ -1,13 +1,15 @@
 import json
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Optional, Union
 
 from ..utils import log_error
 
 
-class HParams:
+class HParams(ABC):
     """Base class with hyperparameters"""
 
+    @abstractmethod
     def __init__(self) -> None:
         self.train_data_dirs: list[Path] = [Path("data/train")]
         self.valid_data_dirs: list[Path] = [Path("data/valid")]
