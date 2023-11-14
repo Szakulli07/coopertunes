@@ -1,6 +1,7 @@
 from .hparams import HParams
 from .hparamsA import modelAHParams
 from .hparamsB import modelBHParams
+from .MelSpecVAE import MelSpecVAEHParams
 
 
 def get_hparams(model_name: str):
