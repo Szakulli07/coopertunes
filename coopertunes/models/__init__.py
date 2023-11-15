@@ -1,5 +1,6 @@
-from .model import Model
 from .MelSpecVAE import MelSpecVAE
+from .model import Model
+
 
 def get_model(model_name):
     models_dict = {

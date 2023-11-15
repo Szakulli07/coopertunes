@@ -1,10 +1,11 @@
-from ..models import MelSpecVAE
-from ..hparams import MelSpecVAEHParams
-from ..datasets import MelDataset
-from ..utils import log_info
-
 import torch
 from torch.utils.data import DataLoader
+
+from ..datasets import MelDataset
+from ..hparams import MelSpecVAEHParams
+from ..models import MelSpecVAE
+from ..utils import log_info
+
 
 class MelSpecVAESupervisor:
     '''Common supervisor for coopertunes models
