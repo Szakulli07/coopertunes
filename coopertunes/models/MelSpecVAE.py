@@ -5,15 +5,15 @@ from torch.nn import functional as F
 
 from einops import rearrange
 
-from ..hparams import HParams
+from ..hparams import MelSpecVAEHParams
 
 
 class MelSpecVAE(nn.Module):
     """Generating mels from noise with vanilla VAE"""
 
-    def __init__(self, hparams: HParams):
+    def __init__(self, hparams: MelSpecVAEHParams):
         super().__init__()
-        self.hparams: HParams = hparams
+        self.hparams: MelSpecVAEHParams = hparams
 
         self.recon_loss_weight = hparams.recon_loss_weight
         self.latent_dim = hparams.latent_dim
@@ -34,11 +34,11 @@ class MelSpecVAE(nn.Module):
         )
 
         self.fc_mu = nn.Linear(
-            self.last_filter*(self.before_latent[0]*self.before_latent[1]),
+            int(self.last_filter*(self.before_latent[0]*self.before_latent[1])),
             self.latent_dim)
 
         self.fc_var = nn.Linear(
-            self.last_filter*(self.before_latent[0]*self.before_latent[1]),
+            int(self.last_filter*(self.before_latent[0]*self.before_latent[1])),
             self.latent_dim)
 
         self._build_decoder(
@@ -54,15 +54,23 @@ class MelSpecVAE(nn.Module):
         conv_filters: list,
         conv_kernels: list,
         conv_strides: list,
-        conv_padding: list):
+        conv_padding: list
+    ):
 
         blocks = []
         in_channels = 1
         relu_fn = nn.ReLU()
 
-        for (c_filter, c_kernel, c_stride, c_padd) in \
-            zip(conv_filters, conv_kernels, conv_strides, conv_padding):
-
+        for (
+                c_filter,
+                c_kernel,
+                c_stride,
+                c_padd
+            ) in zip(
+                conv_filters,
+                conv_kernels,
+                conv_strides,
+                conv_padding):
             blocks.append(
                 nn.Sequential(
                     nn.Conv2d(
@@ -85,13 +93,14 @@ class MelSpecVAE(nn.Module):
         conv_kernels: list,
         conv_strides: list,
         deconv_padding: list,
-        deconv_out_padding: list):
+        deconv_out_padding: list
+    ):
 
         blocks = []
 
         decoder_input = nn.Linear(
             self.latent_dim,
-            self.last_filter*(self.before_latent[0]*self.before_latent[1])
+            int(self.last_filter*(self.before_latent[0]*self.before_latent[1]))
         )
 
         relu_fn = nn.ReLU()
@@ -160,7 +169,7 @@ class MelSpecVAE(nn.Module):
         result = self.decoder_input(z)
         result = rearrange(
             result,
-            'b (lf bl_m bl_t) -> b lf bl_m bl_t',
+            "b (lf bl_m bl_t) -> b lf bl_m bl_t",
             lf=self.last_filter,
             bl_m=self.before_latent[0],
             bl_t=self.before_latent[1]
@@ -177,20 +186,20 @@ class MelSpecVAE(nn.Module):
         log_var: torch.Tensor
     ) -> dict:
 
-        recons_loss =F.mse_loss(y_recon, y_target)
+        recons_loss = F.mse_loss(y_recon, y_target)
         kld_loss = torch.mean(
             -0.5 * torch.sum(
-                1 + log_var - mu ** 2 - log_var.exp(), dim = 1
-            ), dim = 0
+                1 + log_var - mu**2 - log_var.exp(), dim=1
+            ), dim=0
         )
 
         loss = self.recon_loss_weight * recons_loss + kld_loss
-        return {'loss': loss, 'recon':recons_loss.detach(), 'kld':-kld_loss.detach()}
+        return {"loss": loss, "recon": recons_loss.detach(), "kld": -kld_loss.detach()}
 
     def forward(self, x: torch.Tensor):
         mu, log_var = self.encode(x)
         z = self.reparameterize(mu, log_var)
-        return  [self.decode(z), x, mu, log_var]
+        return [self.decode(z), x, mu, log_var]
 
     def inference(self, z: torch.Tensor):
         return self.decode(z)

@@ -10,6 +10,6 @@ def get_hparams(model_name: str):
 
 
 __all__ = [
-    'HParams',
-    'MelSpecVAEHParams',
+    "HParams",
+    "MelSpecVAEHParams",
 ]

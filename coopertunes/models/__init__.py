@@ -8,7 +8,8 @@ def get_model(model_name):
     }
     return models_dict[model_name]
 
+
 __all__ = [
-    'Model',
-    'MelSpecVAE',
+    "Model",
+    "MelSpecVAE",
 ]

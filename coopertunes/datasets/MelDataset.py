@@ -22,14 +22,13 @@ class MelDataset(Dataset):
 
         self.filepaths = self._load_paths()
 
-        log_info('Prepared dataset, loaded %d filepaths', len(self.filepaths))
-
+        log_info("Prepared dataset, loaded %d filepaths", len(self.filepaths))
 
     def _load_paths(self):
         filepaths = []
         for data_dir in self.data_dirs:
             filepaths.extend(
-                [fp for ext in AUDIO_EXTENSIONS for fp in data_dir.rglob(f'*{ext}')]
+                [fp for ext in AUDIO_EXTENSIONS for fp in data_dir.rglob(f"*{ext}")]
             )
         return filepaths
 
@@ -50,7 +49,7 @@ class MelDataset(Dataset):
 
         mels = self._get_segment(mels)
 
-        return {'mels': mels, 'filepath': str(filepath.absolute())}
+        return {"mels": mels, "filepath": str(filepath.absolute())}
 
     def __len__(self):
         return len(self.filepaths)
@@ -65,6 +64,6 @@ class MelDataset(Dataset):
             mels = mels[:, :, start: start + self.hparams.segment_len]
         else:
             mels = F.pad(
-                mels, (0, self.hparams.segment_len - mels.size(1)), 'constant'
+                mels, (0, self.hparams.segment_len - mels.size(1)), "constant"
             )
         return mels

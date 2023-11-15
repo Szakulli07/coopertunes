@@ -66,13 +66,14 @@ def normalize_audio(
         audio = torchaudio.functional.resample(audio, from_sample_rate, to_sample_rate)
     return audio
 
+
 def convert_audios2mels(
     audios,
     sample_rate: int = 16_000,
-    n_fft: int =1024,
-    win_length: int =1024,
-    hop_length: int =56,
-    n_mels: int =80,
+    n_fft: int = 1024,
+    win_length: int = 1024,
+    hop_length: int = 56,
+    n_mels: int = 80,
     normalized: bool = False,
 ):
     # Normalize audio just to be safe

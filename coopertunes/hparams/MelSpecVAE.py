@@ -12,10 +12,10 @@ class MelSpecVAEHParams(HParams):
         self.conv_filters: list[int] = [512, 256, 128, 64, 32]
         self.conv_kernels: list[int] = [3, 3, 3, 3, 3]
         self.conv_strides: list[int | tuple[int]] = [2, 2, 2, 2, 2]
-        self.conv_padding: list[int]  = [1, 1, 1, 1, 1]
-        self.deconv_padding: list[int]  = [1, 1, 1, 1, 1]
-        self.deconv_out_padding: list[int]  = [1, 1, 1, 1, 1]
-        self.input_shape: tuple[int] = (256, 128)
+        self.conv_padding: list[int] = [1, 1, 1, 1, 1]
+        self.deconv_padding: list[int] = [1, 1, 1, 1, 1]
+        self.deconv_out_padding: list[int] = [1, 1, 1, 1, 1]
+        self.input_shape: tuple[int, int] = (256, 128)
         self.latent_dim: int = 64
         self.recon_loss_weight: int = 1000000
 
