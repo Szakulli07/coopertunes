@@ -4,7 +4,6 @@ from .hparams import HParams
 
 
 class MelSpecVAEHParams(HParams):
-    """Class with hparams for model A"""
 
     def __init__(self, hparams: Optional[Union[Path, dict[str, Any]]] = None):
         super().__init__()
@@ -18,5 +17,13 @@ class MelSpecVAEHParams(HParams):
         self.input_shape: tuple[int] = (256, 128)
         self.latent_dim: int = 64
         self.recon_loss_weight: int = 1000000
+
+        self.hop = 256
+        self.sample_rate = 44100
+        self.n_fft = 1024
+        self.win_length = 1024
+        self.hop_length = 256
+        self.n_mels = 256
+        self.normalized = False
 
         self.update(hparams)
