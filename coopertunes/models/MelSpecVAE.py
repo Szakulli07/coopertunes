@@ -3,6 +3,8 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from einops import rearrange
+
 from ..hparams import HParams
 
 
@@ -46,7 +48,7 @@ class MelSpecVAE(nn.Module):
             hparams.deconv_padding,
             hparams.deconv_out_padding
         )
-    
+
     def _build_encoder(
         self,
         conv_filters: list,
@@ -126,18 +128,18 @@ class MelSpecVAE(nn.Module):
             activation_fn
         )
 
-    def encode(self, input: torch.Tensor) -> list[torch.Tensor]:
+    def encode(self, x: torch.Tensor) -> list[torch.Tensor]:
         """
         Encodes the input by passing through the encoder network
         and returns the latent codes
         """
-        result = self.encoder(input)
-        result = torch.flatten(result, start_dim=1)
+        encoded = self.encoder(x)
+        encoded = torch.flatten(encoded, start_dim=1)
 
         # Split the result into mu and var components
         # of the latent Gaussian distribution
-        mu = self.fc_mu(result)
-        log_var = self.fc_var(result)
+        mu = self.fc_mu(encoded)
+        log_var = self.fc_var(encoded)
 
         return [mu, log_var]
 
@@ -156,7 +158,13 @@ class MelSpecVAE(nn.Module):
         onto the image space.
         """
         result = self.decoder_input(z)
-        result = result.view(-1, self.last_filter, self.before_latent[0], self.before_latent[1])
+        result = rearrange(
+            result,
+            'b (lf bl_m bl_t) -> b lf bl_m bl_t',
+            lf=self.last_filter,
+            bl_m=self.before_latent[0],
+            bl_t=self.before_latent[1]
+        )
         result = self.decoder(result)
         result = self.final_layer(result)
         return result
@@ -170,15 +178,19 @@ class MelSpecVAE(nn.Module):
     ) -> dict:
 
         recons_loss =F.mse_loss(y_recon, y_target)
-        kld_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim = 1), dim = 0)
+        kld_loss = torch.mean(
+            -0.5 * torch.sum(
+                1 + log_var - mu ** 2 - log_var.exp(), dim = 1
+            ), dim = 0
+        )
 
         loss = self.recon_loss_weight * recons_loss + kld_loss
         return {'loss': loss, 'recon':recons_loss.detach(), 'kld':-kld_loss.detach()}
 
-    def forward(self, input: torch.Tensor):
-        mu, log_var = self.encode(input)
+    def forward(self, x: torch.Tensor):
+        mu, log_var = self.encode(x)
         z = self.reparameterize(mu, log_var)
-        return  [self.decode(z), input, mu, log_var]
+        return  [self.decode(z), x, mu, log_var]
 
     def inference(self, z: torch.Tensor):
         return self.decode(z)

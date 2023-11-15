@@ -54,7 +54,10 @@ class MelSpecVAESupervisor:
 
             loss['loss'].backward()
 
-            log_info(f"step: {self.step} | loss: {loss['loss'].clone().detach().item()} | recon: {loss['recon']} | kld: {loss['kld']}")
+            log_info(f"step: {self.step} | \
+                loss: {loss['loss'].clone().detach().item()} | \
+                recon: {loss['recon']} | \
+                kld: {loss['kld']}")
             self.optimizer.step()
 
             self.step += 1
