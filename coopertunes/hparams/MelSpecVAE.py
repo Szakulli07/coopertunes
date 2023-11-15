@@ -25,5 +25,6 @@ class MelSpecVAEHParams(HParams):
         self.hop_length = 256
         self.n_mels = 256
         self.normalized = False
+        self.segment_len = 128
 
         self.update(hparams)

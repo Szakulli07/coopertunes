@@ -1,6 +1,6 @@
 from ..models import MelSpecVAE
 from ..hparams import MelSpecVAEHParams
-from ..datasets import AudioDataset
+from ..datasets import MelDataset
 from ..utils import log_info
 
 import torch
@@ -20,7 +20,7 @@ class MelSpecVAESupervisor:
 
         self.train_dl, self.val_dl = self._build_loaders()
 
-        self.optimizer = torch.optim.AdamW(model.parameters(), lr=2e-3)
+        self.optimizer = torch.optim.AdamW(model.parameters(), lr=hparmas.learning_rate)
 
         if self.hparams.base_checkpoint:
             self._load_checkpoint()
@@ -42,8 +42,7 @@ class MelSpecVAESupervisor:
                 break
 
             batch = next(train_dl_iter)
-            mels = convert_audios2mels(batch['audio'], 16000).to(device)
-            print(mels.shape)
+            mels = batch['mels'].to(self.device)
 
             self.optimizer.zero_grad()
             reconstruct, input, mu, log_var = self.model(mels)
@@ -51,7 +50,7 @@ class MelSpecVAESupervisor:
 
             loss['loss'].backward()
 
-            log_info(f"step: {self.step} | loss: {loss['loss'].clone().detach().item()} | recon: {loss['Reconstruction_Loss']} | kld: {loss['KLD']}")
+            log_info(f"step: {self.step} | loss: {loss['loss'].clone().detach().item()} | recon: {loss['recon']} | kld: {loss['kld']}")
             self.optimizer.step()
 
             self.step += 1
@@ -66,7 +65,7 @@ class MelSpecVAESupervisor:
         return train_dl, val_dl
 
     def _create_dataloader(
-        self, dataset: AudioDataset, training: bool
+        self, dataset: MelDataset, training: bool
     ) -> DataLoader:
         collate_fn = None
         batch_size = (
@@ -82,12 +81,12 @@ class MelSpecVAESupervisor:
             collate_fn=collate_fn,
         )
 
-    def _build_dataset(self, training: bool) -> AudioDataset:
-        dataset: AudioDataset
+    def _build_dataset(self, training: bool) -> MelDataset:
+        dataset: MelDataset
         data_dirs = (
             self.hparams.train_data_dirs if training else self.hparams.valid_data_dirs
         )
-        dataset = AudioDataset(self.hparams, data_dirs)
+        dataset = MelDataset(self.hparams, data_dirs)
         return dataset
 
     def _make_infinite_epochs(self, dl: DataLoader):

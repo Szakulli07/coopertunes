@@ -23,6 +23,8 @@ class HParams(ABC):
         self.batch_size: int = 1
         self.valid_batch_size: int = 1
 
+        self.learning_rate: float = 2e-3
+
     def update(self, hparams: Optional[Union[Path, dict[str, Any]]] = None):
         if hparams is not None:
             if isinstance(hparams, dict):
