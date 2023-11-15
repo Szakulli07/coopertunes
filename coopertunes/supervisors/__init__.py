@@ -1,1 +1,1 @@
-from MelSpecVAE import MelSpecVAESupervisor
+from .MelSpecVAE import MelSpecVAESupervisor

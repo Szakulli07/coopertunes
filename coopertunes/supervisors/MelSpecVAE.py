@@ -41,6 +41,9 @@ class MelSpecVAESupervisor:
                 log_info('Max steps reached. Training finished')
                 break
 
+            if self.step % self.hparams.steps_per_ckpt == 0:
+                self._save_checkpoint()
+
             batch = next(train_dl_iter)
             mels = batch['mels'].to(self.device)
 
@@ -89,7 +92,38 @@ class MelSpecVAESupervisor:
         dataset = MelDataset(self.hparams, data_dirs)
         return dataset
 
+    def _save_checkpoint(self):
+        self.hparams.checkpoints_dir.mkdir(parents=True, exist_ok=True)
+        torch.save({
+            'step': self.step,
+            'model_state_dict': self.model.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict()
+            }, (self.hparams.checkpoints_dir/str(self.step)).with_suffix('.pt')
+        )
+        log_info('Saved checkpoint after %d step', self.step)
+
+    def _load_checkpoint(self):
+        if not self.hparams.base_checkpoint:
+            log_info('No checkpoint specified, nothing loaded')
+            return
+
+        checkpoint = torch.load(self.hparams.base_checkpoint)
+        log_info('Loading checkpoint from %d step', self.step)
+
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        self.step = checkpoint['step']
+        self.step += 1
+
     def _make_infinite_epochs(self, dl: DataLoader):
         while True:
             yield from dl
             self.epoch += 1
+
+
+if __name__ == "__main__":
+    hparams = MelSpecVAEHParams()
+    model = MelSpecVAE(hparams)
+    device = 'cpu'
+    supervisor = MelSpecVAESupervisor(model, device, hparams)
+    supervisor.train()
