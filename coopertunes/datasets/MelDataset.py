@@ -38,7 +38,6 @@ class MelDataset(Dataset):
 
         audio, sample_rate = torchaudio.load(filepath)
         audio = normalize_audio(audio, sample_rate, self.hparams.sample_rate)
-        print(audio.shape)
         mels = convert_audios2mels(
             audio,
             self.hparams.sample_rate,
@@ -48,7 +47,6 @@ class MelDataset(Dataset):
             self.hparams.n_mels,
             self.hparams.normalized
         )
-        print(mels.shape)
 
         mels = self._get_segment(mels)
 
@@ -61,11 +59,9 @@ class MelDataset(Dataset):
         if self.hparams.segment_len is None:
             return mels
 
-        print(mels.shape[-1])
         if mels.shape[-1] > self.hparams.segment_len:
             max_start = mels.shape[-1] - self.hparams.segment_len
             start = torch.randint(0, max_start, (1,))
-            print(max_start, start)
             mels = mels[:, :, start: start + self.hparams.segment_len]
         else:
             mels = F.pad(

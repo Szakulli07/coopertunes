@@ -158,7 +158,6 @@ class MelSpecVAE(nn.Module):
         """
         result = self.decoder_input(z)
         result = result.view(-1, self.last_filter, self.before_latent[0], self.before_latent[1])
-        print(result.shape)
         result = self.decoder(result)
         result = self.final_layer(result)
         return result
@@ -180,7 +179,6 @@ class MelSpecVAE(nn.Module):
     def forward(self, input: torch.Tensor):
         mu, log_var = self.encode(input)
         z = self.reparameterize(mu, log_var)
-        print(z.shape)
         return  [self.decode(z), input, mu, log_var]
 
     def inference(self, z: torch.Tensor):

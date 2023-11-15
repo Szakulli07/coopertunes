@@ -19,6 +19,7 @@ class HParams(ABC):
         self.base_checkpoint: int | None = None
         self.steps_per_log: int = 100
         self.steps_per_ckpt: int = 5_000
+        self.total_steps: int = 1_000_000
         self.loader_num_workers: int = 4
         self.batch_size: int = 1
         self.valid_batch_size: int = 1
