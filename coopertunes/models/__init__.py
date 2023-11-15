@@ -7,3 +7,8 @@ def get_model(model_name):
         "MelSpecVAE": MelSpecVAE,
     }
     return models_dict[model_name]
+
+__all__ = [
+    'Model',
+    'MelSpecVAE',
+]

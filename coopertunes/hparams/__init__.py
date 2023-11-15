@@ -7,3 +7,9 @@ def get_hparams(model_name: str):
         "MelSpecVAE": MelSpecVAEHParams,
     }
     return hparams_dict[model_name]
+
+
+__all__ = [
+    'HParams',
+    'MelSpecVAEHParams',
+]
