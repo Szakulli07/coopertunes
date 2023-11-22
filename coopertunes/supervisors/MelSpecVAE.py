@@ -128,7 +128,9 @@ class MelSpecVAESupervisor:
 
 
 if __name__ == "__main__":
+    from pathlib import Path
     hparams = MelSpecVAEHParams()
+    hparams.train_data_dirs=[{Path('/mnt/m/cowork/t2/l.bondaruk/hifi-gan/LJSpeech-1.1/wavs/')}]
     mel_spec_vae = MelSpecVAE(hparams)
     cpu_device = torch.device("cpu")
     vae_supervisor = MelSpecVAESupervisor(mel_spec_vae, cpu_device, hparams)
