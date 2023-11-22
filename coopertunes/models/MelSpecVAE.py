@@ -15,7 +15,7 @@ class MelSpecVAE(nn.Module):
         super().__init__()
         self.hparams: MelSpecVAEHParams = hparams
 
-        self.recon_loss_weight = hparams.recon_loss_weight
+        self.kld_weight = hparams.kld_weight
         self.latent_dim = hparams.latent_dim
 
         self.pool_factor = np.prod(hparams.conv_strides)
@@ -193,7 +193,7 @@ class MelSpecVAE(nn.Module):
             ), dim=0
         )
 
-        loss = self.recon_loss_weight * recons_loss + kld_loss
+        loss = recons_loss + kld_loss * self.kld_weight
         return {"loss": loss, "recon": recons_loss.detach(), "kld": -kld_loss.detach()}
 
     def forward(self, x: torch.Tensor):

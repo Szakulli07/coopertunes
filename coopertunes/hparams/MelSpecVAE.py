@@ -17,7 +17,7 @@ class MelSpecVAEHParams(HParams):
         self.deconv_out_padding: list[int] = [1, 1, 1, 1, 1]
         self.input_shape: tuple[int, int] = (256, 128)
         self.latent_dim: int = 64
-        self.recon_loss_weight: int = 1000000
+        self.kld_weight: float = 0.00025
 
         self.hop = 256
         self.sample_rate = 44100
