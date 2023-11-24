@@ -3,7 +3,7 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "momo"
+name = "coopertunes"
 version = "0.1.0"
 authors = [
   { name="Łukasz Bondaruk", email="lukas.bond07@gmail.com" },
@@ -15,10 +15,14 @@ requires-python = ">=3.10"
 dependencies = [
   "coloredlogs>=15.0.1",
   "einops==0.7.0",
+  "librosa==0.10.1",
   "pycodestyle==2.10.0",
   "pylint==2.16.2",
+  "tensorboard==2.15.1",
   "mypy==1.5.0",
-  "numpy==1.23.5"]
+  "matplotlib==3.8.2",
+  "numpy==1.23.5",
+  "torch-summary==1.4.5"]
 
 [project.urls]
 "Homepage" = "https://github.com/Szakulli07/coopertunes"
