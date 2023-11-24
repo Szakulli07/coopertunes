@@ -17,11 +17,15 @@ class HParams(ABC):
         self.logs_dir: Path = Path("models/log")
 
         self.base_checkpoint: int | None = None
-        self.steps_per_log: int = 100
-        self.steps_per_ckpt: int = 5_000
+        self.steps_per_log: int = 10
+        self.steps_per_ckpt: int = 1_000
+        self.total_steps: int = 1_000_000
+
         self.loader_num_workers: int = 4
-        self.batch_size: int = 1
+        self.batch_size: int = 4
         self.valid_batch_size: int = 1
+
+        self.sample_rate: int = 22_500
 
     def update(self, hparams: Optional[Union[Path, dict[str, Any]]] = None):
         if hparams is not None:
