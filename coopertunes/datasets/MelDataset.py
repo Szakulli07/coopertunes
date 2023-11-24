@@ -1,12 +1,13 @@
 from pathlib import Path
 
+import librosa
 import torch
 import torch.nn.functional as F
-import torchaudio
+from einops import rearrange
 from torch.utils.data import Dataset
 
 from ..hparams import HParams
-from ..utils import (AUDIO_EXTENSIONS, convert_audios2mels, log_info,
+from ..utils import (AUDIO_EXTENSIONS, convert_audios2mels_h, log_info,
                      normalize_audio)
 
 
@@ -17,7 +18,6 @@ class MelDataset(Dataset):
         if isinstance(data_dirs, Path):
             data_dirs = [data_dirs]
         self.data_dirs = data_dirs
-
         assert all(map(Path.exists, self.data_dirs))
 
         self.filepaths = self._load_paths()
@@ -35,21 +35,16 @@ class MelDataset(Dataset):
     def __getitem__(self, idx):
         filepath = self.filepaths[idx]
 
-        audio, sample_rate = torchaudio.load(filepath)
+        audio, sample_rate = librosa.load(filepath)
         audio = normalize_audio(audio, sample_rate, self.hparams.sample_rate)
-        mels = convert_audios2mels(
-            audio,
-            self.hparams.sample_rate,
-            self.hparams.n_fft,
-            self.hparams.win_length,
-            self.hparams.hop_length,
-            self.hparams.n_mels,
-            self.hparams.normalized
-        )
 
+        mels = convert_audios2mels_h(
+            audio, self.hparams
+        )
+        mels = rearrange(mels, '... -> 1 ...')
         mels = self._get_segment(mels)
 
-        return {"mels": mels, "filepath": str(filepath.absolute())}
+        return {"mels": mels}
 
     def __len__(self):
         return len(self.filepaths)
@@ -64,6 +59,6 @@ class MelDataset(Dataset):
             mels = mels[:, :, start: start + self.hparams.segment_len]
         else:
             mels = F.pad(
-                mels, (0, self.hparams.segment_len - mels.size(1)), "constant"
+                mels, (0, self.hparams.segment_len - mels.size(2)), "constant"
             )
         return mels
