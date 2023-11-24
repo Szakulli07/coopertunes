@@ -20,7 +20,7 @@ Clone coopertunes repository:
 
 Before install `coopertunes` module you need to install `pytorch` framework. It is recommended to install version `2.0.1`:
 
-`pip install torch==2.0.1 --index-url https://download.pytorch.org/whl/cu118`
+`pip install torch==2.0.1 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cu118`
 
 Now you need to install `coopertunes` module:
 
