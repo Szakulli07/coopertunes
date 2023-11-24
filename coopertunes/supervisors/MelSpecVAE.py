@@ -72,7 +72,6 @@ class MelSpecVAESupervisor:
             )
 
             self.optimizer.step()
-            self.scheduler.step()
 
             stats = {
                 'loss': loss["loss"].item(),
@@ -200,6 +199,7 @@ class MelSpecVAESupervisor:
         while True:
             yield from dl
             self.epoch += 1
+            self.scheduler.step()
 
     def _log_train_stats(self, stats):
         self._logger.update_running_vals(stats, 'training')
@@ -215,6 +215,6 @@ if __name__ == "__main__":
     hparams = MelSpecVAEHParams()
     mel_spec_vae = MelSpecVAE(hparams)
     summary(mel_spec_vae)
-    cpu_device = torch.device("cpu")
+    cpu_device = torch.device("cuda")
     vae_supervisor = MelSpecVAESupervisor(mel_spec_vae, cpu_device, hparams)
     vae_supervisor.train()
