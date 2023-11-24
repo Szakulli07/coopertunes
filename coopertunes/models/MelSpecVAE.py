@@ -1,9 +1,8 @@
 import numpy as np
 import torch
+from einops import rearrange
 from torch import nn
 from torch.nn import functional as F
-
-from einops import rearrange
 
 from ..hparams import MelSpecVAEHParams
 
@@ -128,13 +127,10 @@ class MelSpecVAE(nn.Module):
             output_padding=deconv_out_padding[0]
         )
 
-        activation_fn = nn.Sigmoid()
-
         self.decoder_input = decoder_input
         self.decoder = nn.Sequential(*blocks)
         self.final_layer = nn.Sequential(
-            decoder_final_layer,
-            activation_fn
+            decoder_final_layer
         )
 
     def encode(self, x: torch.Tensor) -> list[torch.Tensor]:
