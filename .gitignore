@@ -81,11 +81,7 @@ pyvenv.cfg
 .venv
 pip-selfcheck.json
 ### VisualStudioCode template
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+.vscode
 ### Python template
 # Byte-compiled / optimized / DLL files
 __pycache__/
