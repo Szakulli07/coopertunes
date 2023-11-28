@@ -17,6 +17,7 @@ Clone coopertunes repository:
 
 `git clone git@github.com:Szakulli07/coopertunes.git`
 `cd coopertunes`
+`conda develop .`
 
 Before install `coopertunes` module you need to install `pytorch` framework. It is recommended to install version `2.0.1`:
 
@@ -25,6 +26,8 @@ Before install `coopertunes` module you need to install `pytorch` framework. It 
 Now you need to install `coopertunes` module:
 
 `pip install -e .`
+`pip install -r requirements.txt`
+
 
 # How should I write my commits?
 

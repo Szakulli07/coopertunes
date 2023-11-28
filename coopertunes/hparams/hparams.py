@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Optional, Union
 
-from ..utils import log_error
+from coopertunes.utils import log_error
 
 
 class HParams(ABC):
@@ -13,6 +13,7 @@ class HParams(ABC):
     def __init__(self) -> None:
         self.train_data_dirs: list[Path] = [Path("data/train")]
         self.valid_data_dirs: list[Path] = [Path("data/valid")]
+        self.processed_data_dir: Path = Path("data/processed")
         self.checkpoints_dir: Path = Path("models/ckpt")
         self.logs_dir: Path = Path("models/log")
 
@@ -71,3 +72,6 @@ class HParams(ABC):
 
     def __repr__(self) -> str:
         return self._dumps()
+    
+    def get(self,name):
+        return vars(self)[name][0]

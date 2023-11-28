@@ -5,11 +5,11 @@ import torch
 from einops import rearrange
 from torch.utils.data import DataLoader
 
-from ..datasets import MelDataset
-from ..hparams import MelSpecVAEHParams
-from ..logger import Logger
-from ..models import MelSpecVAE
-from ..utils import log_info
+from coopertunes.datasets import MelDataset
+from coopertunes.hparams import MelSpecVAEHParams
+from coopertunes.logger import Logger
+from coopertunes.models import MelSpecVAE
+from coopertunes.utils import log_info
 
 
 class MelSpecVAESupervisor:
