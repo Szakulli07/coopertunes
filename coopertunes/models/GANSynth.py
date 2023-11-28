@@ -8,8 +8,11 @@ from coopertunes.models import Model
 EPS = 1e-8
 
 
+def get_same_padding(kernel_size, dilation=1):
+    return int((kernel_size*dilation - dilation)/2)
+
+
 class Generator(nn.Module):
-    # FIXME: Padding to same and Upsample by kernel 2x2
 
     def __init__(self, hparams):
         super().__init__()
@@ -17,61 +20,61 @@ class Generator(nn.Module):
             nn.ConvTranspose2d(317, 256, (2, 16)),
             nn.LeakyReLU(0.2),
             PixelNormalization(EPS),
-            nn.ConvTranspose2d(256, 256, 3, padding=1),
+            nn.ConvTranspose2d(256, 256, 3, padding=get_same_padding(3)),
             nn.LeakyReLU(0.2),
             PixelNormalization(EPS),
-            nn.Upsample(size=(4, 32))
+            nn.Upsample(scale_factor=2)
         )
         self.block2 = nn.Sequential(
-            nn.ConvTranspose2d(256, 256, 3, padding=1),
+            nn.ConvTranspose2d(256, 256, 3, padding=get_same_padding(3)),
             nn.LeakyReLU(0.2),
             PixelNormalization(EPS),
-            nn.ConvTranspose2d(256, 256, 3, padding=1),
+            nn.ConvTranspose2d(256, 256, 3, padding=get_same_padding(3)),
             nn.LeakyReLU(0.2),
             PixelNormalization(EPS),
-            nn.Upsample(size=(8, 64))
+            nn.Upsample(scale_factor=2)
         )
         self.block3 = nn.Sequential(
-            nn.ConvTranspose2d(256, 256, 3, padding=1),
+            nn.ConvTranspose2d(256, 256, 3, padding=get_same_padding(3)),
             nn.LeakyReLU(0.2),
             PixelNormalization(EPS),
-            nn.ConvTranspose2d(256, 256, 3, padding=1),
+            nn.ConvTranspose2d(256, 256, 3, padding=get_same_padding(3)),
             nn.LeakyReLU(0.2),
             PixelNormalization(EPS),
-            nn.Upsample(size=(16, 128))
+            nn.Upsample(scale_factor=2)
         )
         self.block4 = nn.Sequential(
-            nn.ConvTranspose2d(256, 256, 3, padding=1),
+            nn.ConvTranspose2d(256, 256, 3, padding=get_same_padding(3)),
             nn.LeakyReLU(0.2),
             PixelNormalization(EPS),
-            nn.ConvTranspose2d(256, 256, 3, padding=1),
+            nn.ConvTranspose2d(256, 256, 3, padding=get_same_padding(3)),
             nn.LeakyReLU(0.2),
             PixelNormalization(EPS),
-            nn.Upsample(size=(32, 256))
+            nn.Upsample(scale_factor=2)
         )
         self.block5 = nn.Sequential(
-            nn.ConvTranspose2d(256, 128, 3, padding=1),
+            nn.ConvTranspose2d(256, 128, 3, padding=get_same_padding(3)),
             nn.LeakyReLU(0.2),
             PixelNormalization(EPS),
-            nn.ConvTranspose2d(128, 128, 3, padding=1),
+            nn.ConvTranspose2d(128, 128, 3, padding=get_same_padding(3)),
             nn.LeakyReLU(0.2),
             PixelNormalization(EPS),
-            nn.Upsample(size=(64, 512))
+            nn.Upsample(scale_factor=2)
         )
         self.block6 = nn.Sequential(
-            nn.ConvTranspose2d(128, 64, 3, padding=1),
+            nn.ConvTranspose2d(128, 64, 3, padding=get_same_padding(3)),
             nn.LeakyReLU(0.2),
             PixelNormalization(EPS),
-            nn.ConvTranspose2d(64, 64, 3, padding=1),
+            nn.ConvTranspose2d(64, 64, 3, padding=get_same_padding(3)),
             nn.LeakyReLU(0.2),
             PixelNormalization(EPS),
-            nn.Upsample(size=(128, 1024))
+            nn.Upsample(scale_factor=2)
         )
         self.block7 = nn.Sequential(
-            nn.ConvTranspose2d(64, 32, 3, padding=1),
+            nn.ConvTranspose2d(64, 32, 3, padding=get_same_padding(3)),
             nn.LeakyReLU(0.2),
             PixelNormalization(EPS),
-            nn.ConvTranspose2d(32, 32, 3, padding=1),
+            nn.ConvTranspose2d(32, 32, 3, padding=get_same_padding(3)),
             nn.LeakyReLU(0.2),
             PixelNormalization(EPS),
             nn.ConvTranspose2d(32, 2, 1),
