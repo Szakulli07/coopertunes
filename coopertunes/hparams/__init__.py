@@ -1,7 +1,7 @@
-from .hparams import HParams
-from .MelSpecVAE import MelSpecVAEHParams
-from .MelGan import MelGanHParams
-from .Audio2Mel import Audio2MelHParams
+from coopertunes.hparams.hparams import HParams
+from coopertunes.hparams.MelSpecVAE import MelSpecVAEHParams
+from coopertunes.hparams.MelGan import MelGanHParams
+from coopertunes.hparams.Audio2Mel import Audio2MelHParams
 
 
 def get_hparams(model_name: str):

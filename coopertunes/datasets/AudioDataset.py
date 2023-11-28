@@ -30,7 +30,7 @@ class AudioDataset(torch.utils.data.Dataset):
         self.sampling_rate = sampling_rate
         self.segment_length = segment_length
         self.audio_files = files_to_list(training_files)
-        self.audio_files = [Path(training_files).parent / x for x in self.audio_files]
+        # self.audio_files = [ x for x in self.audio_files]
         random.seed(1234)
         random.shuffle(self.audio_files)
         self.augment = augment

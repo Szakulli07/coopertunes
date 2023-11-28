@@ -5,6 +5,7 @@ from librosa.filters import mel as librosa_mel_fn
 from torch.nn.utils import weight_norm
 import numpy as np
 
+from coopertunes.hparams import HParams
 
 def weights_init(m):
     classname = m.__class__.__name__
@@ -38,7 +39,7 @@ class ResnetBlock(nn.Module):
 
 
 class MelGanGenerator(nn.Module):
-    def __init__(self, hparams):
+    def __init__(self, hparams: HParams):
         super().__init__()
         ratios = [8, 8, 2, 2]
         self.hop_length = np.prod(ratios)
@@ -46,7 +47,7 @@ class MelGanGenerator(nn.Module):
 
         model = [
             nn.ReflectionPad1d(3),
-            WNConv1d(hparams.input_size, mult * hparams.ngf, kernel_size=7, padding=0),
+            WNConv1d(hparams.n_mel_channels, mult * hparams.ngf, kernel_size=7, padding=0),
         ]
 
         # Upsample to raw audio scale
@@ -83,7 +84,7 @@ class MelGanGenerator(nn.Module):
 
 
 class MelGanNLayerDiscriminator(nn.Module):
-    def __init__(self, hparams):
+    def __init__(self, hparams: HParams):
         super().__init__()
         model = nn.ModuleDict()
 
@@ -94,8 +95,8 @@ class MelGanNLayerDiscriminator(nn.Module):
         )
 
         nf = hparams.ndf
-        stride = hparams.downsampling_factor
-        for n in range(1, hparams.n_layers + 1):
+        stride = hparams.downsamp_factor
+        for n in range(1, hparams.n_layers_D + 1):
             nf_prev = nf
             nf = min(nf * stride, 1024)
 
@@ -112,12 +113,12 @@ class MelGanNLayerDiscriminator(nn.Module):
             )
 
         nf = min(nf * 2, 1024)
-        model["layer_%d" % (hparams.n_layers + 1)] = nn.Sequential(
+        model["layer_%d" % (hparams.n_layers_D + 1)] = nn.Sequential(
             WNConv1d(nf_prev, nf, kernel_size=5, stride=1, padding=2),
             nn.LeakyReLU(0.2, True),
         )
 
-        model["layer_%d" % (hparams.n_layers + 2)] = WNConv1d(
+        model["layer_%d" % (hparams.n_layers_D + 2)] = WNConv1d(
             nf, 1, kernel_size=3, stride=1, padding=1
         )
 
@@ -132,7 +133,7 @@ class MelGanNLayerDiscriminator(nn.Module):
 
 
 class MelGanDiscriminator(nn.Module):
-    def __init__(self, hparams):
+    def __init__(self, hparams: HParams):
         super().__init__()
         self.model = nn.ModuleDict()
         for i in range(hparams.num_D):

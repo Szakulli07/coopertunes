@@ -1,5 +1,5 @@
-from ..models import Audio2Mel
-from ..hparams import Audio2MelHParams
+from coopertunes.models import Audio2Mel
+from coopertunes.hparams import Audio2MelHParams
 
 import torch
 

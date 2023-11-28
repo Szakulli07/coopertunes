@@ -1,7 +1,7 @@
-from .MelSpecVAE import MelSpecVAE
-from .MelGan import MelGanGenerator, MelGanDiscriminator
-from .Audio2Mel import Audio2Mel
-from .model import Model
+from coopertunes.models.MelSpecVAE import MelSpecVAE
+from coopertunes.models.MelGan import MelGanGenerator, MelGanDiscriminator
+from coopertunes.models.Audio2Mel import Audio2Mel
+from coopertunes.models.model import Model
 
 
 def get_model(model_name):

@@ -6,8 +6,8 @@ from typing import Any, Literal
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from .hparams import HParams
-from .utils import convert_mels2audios_h, log_info, plot_audio, plot_mel
+from coopertunes.hparams import HParams
+from coopertunes.utils import convert_mels2audios_h, log_info, plot_audio, plot_mel
 
 
 class Logger:

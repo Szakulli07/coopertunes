@@ -12,7 +12,7 @@ import torch
 from coloredlogs import ColoredFormatter
 from torch import nn
 
-from .distributed import global_rank, local_rank
+from coopertunes.distributed import global_rank, local_rank
 
 L = TypeVar("L")
 

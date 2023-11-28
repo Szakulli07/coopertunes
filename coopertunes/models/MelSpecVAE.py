@@ -4,7 +4,7 @@ from einops import rearrange
 from torch import nn
 from torch.nn import functional as F
 
-from ..hparams import MelSpecVAEHParams
+from coopertunes.hparams import MelSpecVAEHParams
 
 
 class MelSpecVAE(nn.Module):

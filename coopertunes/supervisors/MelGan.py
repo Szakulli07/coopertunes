@@ -1,6 +1,5 @@
 import os
 import time
-from statistics import mean
 
 import torch
 import torch.nn.functional as F
@@ -8,11 +7,11 @@ import numpy as np
 from torch.utils.data import DataLoader
 from pathlib import Path
 
-from ..datasets import AudioDataset
-from ..hparams import MelGanHParams
-from ..logger import Logger
-from ..models import MelGanGenerator, MelGanDiscriminator, Audio2Mel
-from ..utils import save_sample, get_default_device
+from coopertunes.datasets import AudioDataset
+from coopertunes.hparams import MelGanHParams, Audio2MelHParams
+from coopertunes.logger import Logger
+from coopertunes.models import MelGanGenerator, MelGanDiscriminator, Audio2Mel
+from coopertunes.utils import save_sample, get_default_device
 
 class MelGanSupervisor:
     def __init__(self, 
@@ -20,11 +19,12 @@ class MelGanSupervisor:
                  discriminator: MelGanDiscriminator,
                  device: torch.device, 
                  hparams: MelGanHParams):
-        self.netG = generator
-        self.netD = discriminator
-        self.fft = Audio2Mel(n_mel_channels=hparams.n_mel_channels).cuda()
         self.device = device
+        self.fft = Audio2Mel(Audio2MelHParams()).to(device)
+        self.netG = generator.to(device)
+        self.netD = discriminator.to(device)
         self.hparams = hparams
+        print(f"Chosen device: {self.device}")
 
         self.epoch = 1
         self.step = 1
@@ -32,8 +32,8 @@ class MelGanSupervisor:
         self._logger = Logger("melgan", self.hparams, device)
         self.writer = self._logger.get_summary_writer()
 
-        self.optG = torch.optim.Adam(self.generator.parameters(), lr=1e-4, betas=(0.5, 0.9))
-        self.optD = torch.optim.Adam(self.discriminator.parameters(), lr=1e-4, betas=(0.5, 0.9))
+        self.optG = torch.optim.Adam(self.netG.parameters(), lr=1e-4, betas=(0.5, 0.9))
+        self.optD = torch.optim.Adam(self.netD.parameters(), lr=1e-4, betas=(0.5, 0.9))
 
     def train(self):
         root = Path(self.hparams.save_path)
@@ -61,7 +61,6 @@ class MelGanSupervisor:
         costs = []
         start = time.time()
 
-        # enable cudnn autotuner to speed up training
         torch.backends.cudnn.benchmark = True
 
         steps = 0
@@ -75,9 +74,6 @@ class MelGanSupervisor:
                     s_pred_t = self.fft(x_pred_t.detach())
                     s_error = F.l1_loss(s_t, s_pred_t).item()
 
-                #######################
-                # Train Discriminator #
-                #######################
                 D_fake_det = self.netD(x_pred_t.cuda().detach())
                 D_real = self.netD(x_t.cuda())
 
@@ -92,9 +88,6 @@ class MelGanSupervisor:
                 loss_D.backward()
                 self.optD.step()
 
-                ###################
-                # Train Generator #
-                ###################
                 D_fake = self.netD(x_pred_t.cuda())
 
                 loss_G = 0
@@ -113,9 +106,6 @@ class MelGanSupervisor:
                 (loss_G + self.hparams.lambda_feat * loss_feat).backward()
                 self.optG.step()
 
-                ######################
-                # Update tensorboard #
-                ######################
                 costs.append([loss_D.item(), loss_G.item(), loss_feat.item(), s_error])
 
                 self.writer.add_scalar("loss/discriminator", costs[-1][0], steps)
