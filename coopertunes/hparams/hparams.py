@@ -13,6 +13,7 @@ class HParams(ABC):
     def __init__(self) -> None:
         self.train_data_dirs: list[Path] = [Path("data/train")]
         self.valid_data_dirs: list[Path] = [Path("data/valid")]
+        self.processed_data_dir: Path = Path("data/processed")
         self.checkpoints_dir: Path = Path("models/ckpt")
         self.logs_dir: Path = Path("models/log")
 

@@ -6,6 +6,7 @@ from typing import TypeVar
 
 import librosa
 import matplotlib.pyplot as plt
+import scipy.io.wavfile
 import numpy as np
 import torch
 from coloredlogs import ColoredFormatter
@@ -104,6 +105,13 @@ def convert_audios2mels_h(audios, hparams):
     )
 
 
+def get_default_device():
+    if torch.cuda.is_available():
+        return "cuda"
+    else:
+        return "cpu"
+
+
 def convert_mels2audios(
     mels,
     sample_rate,
@@ -194,6 +202,18 @@ def set_seed(seed: int):
 
 def calc_n_params(module):
     return sum(p.numel() for p in module.parameters())
+
+
+def save_sample(file_path, sampling_rate, audio):
+    """Helper function to save sample
+
+    Args:
+        file_path (str or pathlib.Path): save file path
+        sampling_rate (int): sampling rate of audio (usually 22050)
+        audio (torch.FloatTensor): torch array containing audio in [-1, 1]
+    """
+    audio = (audio.numpy() * 32768).astype("int16")
+    scipy.io.wavfile.write(file_path, sampling_rate, audio)
 
 
 class PrintLayer(nn.Module):
