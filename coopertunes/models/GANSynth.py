@@ -2,15 +2,7 @@ from torch import nn
 from torch.nn import functional as F
 import torch
 from coopertunes.hparams.GANSynth import DiscriminatorHParams, GANSynthHParams, GeneratorHParams
-
-from coopertunes.models import Model
-
-
-EPS = 1e-8
-
-
-def get_same_padding(kernel_size, dilation=1):
-    return int((kernel_size*dilation - dilation)/2)
+from coopertunes.utils import PixelNormalization, dconv_same_padding
 
 
 class Generator(nn.Module):
@@ -27,7 +19,7 @@ class Generator(nn.Module):
             nn.ConvTranspose2d(hparams.latent_dim + hparams.pitch_dim, dconv_filters, hparams.first_dconv_kernel),
             self.activation_function,
             PixelNormalization(hparams.eps),
-            nn.ConvTranspose2d(dconv_filters, dconv_filters, dconv_kernel, padding=get_same_padding(dconv_kernel)),
+            nn.ConvTranspose2d(dconv_filters, dconv_filters, dconv_kernel, padding=dconv_same_padding(dconv_kernel)),
             self.activation_function,
             PixelNormalization(hparams.eps),
             nn.Upsample(scale_factor=upsample)
@@ -39,10 +31,10 @@ class Generator(nn.Module):
         dconv_kernel = hparams.block_dconv_kernel[block_idx]
         upsample = hparams.block_upsample_factor[block_idx]
         self.block1 = nn.Sequential(
-            nn.ConvTranspose2d(previous_dconv_filters, dconv_filters, dconv_kernel, padding=get_same_padding(dconv_kernel)),
+            nn.ConvTranspose2d(previous_dconv_filters, dconv_filters, dconv_kernel, padding=dconv_same_padding(dconv_kernel)),
             self.activation_function,
             PixelNormalization(hparams.eps),
-            nn.ConvTranspose2d(dconv_filters, dconv_filters, dconv_kernel, padding=get_same_padding(dconv_kernel)),
+            nn.ConvTranspose2d(dconv_filters, dconv_filters, dconv_kernel, padding=dconv_same_padding(dconv_kernel)),
             self.activation_function,
             PixelNormalization(hparams.eps),
             nn.Upsample(scale_factor=upsample)
@@ -54,10 +46,10 @@ class Generator(nn.Module):
         dconv_kernel = hparams.block_dconv_kernel[block_idx]
         upsample = hparams.block_upsample_factor[block_idx]
         self.block2 = nn.Sequential(
-            nn.ConvTranspose2d(previous_dconv_filters, dconv_filters, dconv_kernel, padding=get_same_padding(dconv_kernel)),
+            nn.ConvTranspose2d(previous_dconv_filters, dconv_filters, dconv_kernel, padding=dconv_same_padding(dconv_kernel)),
             self.activation_function,
             PixelNormalization(hparams.eps),
-            nn.ConvTranspose2d(dconv_filters, dconv_filters, dconv_kernel, padding=get_same_padding(dconv_kernel)),
+            nn.ConvTranspose2d(dconv_filters, dconv_filters, dconv_kernel, padding=dconv_same_padding(dconv_kernel)),
             self.activation_function,
             PixelNormalization(hparams.eps),
             nn.Upsample(scale_factor=upsample)
@@ -69,10 +61,10 @@ class Generator(nn.Module):
         dconv_kernel = hparams.block_dconv_kernel[block_idx]
         upsample = hparams.block_upsample_factor[block_idx]
         self.block3 = nn.Sequential(
-            nn.ConvTranspose2d(previous_dconv_filters, dconv_filters, dconv_kernel, padding=get_same_padding(dconv_kernel)),
+            nn.ConvTranspose2d(previous_dconv_filters, dconv_filters, dconv_kernel, padding=dconv_same_padding(dconv_kernel)),
             self.activation_function,
             PixelNormalization(hparams.eps),
-            nn.ConvTranspose2d(dconv_filters, dconv_filters, dconv_kernel, padding=get_same_padding(dconv_kernel)),
+            nn.ConvTranspose2d(dconv_filters, dconv_filters, dconv_kernel, padding=dconv_same_padding(dconv_kernel)),
             self.activation_function,
             PixelNormalization(hparams.eps),
             nn.Upsample(scale_factor=upsample)
@@ -84,10 +76,10 @@ class Generator(nn.Module):
         dconv_kernel = hparams.block_dconv_kernel[block_idx]
         upsample = hparams.block_upsample_factor[block_idx]
         self.block4 = nn.Sequential(
-            nn.ConvTranspose2d(previous_dconv_filters, dconv_filters, dconv_kernel, padding=get_same_padding(dconv_kernel)),
+            nn.ConvTranspose2d(previous_dconv_filters, dconv_filters, dconv_kernel, padding=dconv_same_padding(dconv_kernel)),
             self.activation_function,
             PixelNormalization(hparams.eps),
-            nn.ConvTranspose2d(dconv_filters, dconv_filters, dconv_kernel, padding=get_same_padding(dconv_kernel)),
+            nn.ConvTranspose2d(dconv_filters, dconv_filters, dconv_kernel, padding=dconv_same_padding(dconv_kernel)),
             self.activation_function,
             PixelNormalization(hparams.eps),
             nn.Upsample(scale_factor=upsample)
@@ -99,10 +91,10 @@ class Generator(nn.Module):
         dconv_kernel = hparams.block_dconv_kernel[block_idx]
         upsample = hparams.block_upsample_factor[block_idx]
         self.block5 = nn.Sequential(
-            nn.ConvTranspose2d(previous_dconv_filters, dconv_filters, dconv_kernel, padding=get_same_padding(dconv_kernel)),
+            nn.ConvTranspose2d(previous_dconv_filters, dconv_filters, dconv_kernel, padding=dconv_same_padding(dconv_kernel)),
             self.activation_function,
             PixelNormalization(hparams.eps),
-            nn.ConvTranspose2d(dconv_filters, dconv_filters, dconv_kernel, padding=get_same_padding(dconv_kernel)),
+            nn.ConvTranspose2d(dconv_filters, dconv_filters, dconv_kernel, padding=dconv_same_padding(dconv_kernel)),
             self.activation_function,
             PixelNormalization(hparams.eps),
             nn.Upsample(scale_factor=upsample)
@@ -113,10 +105,10 @@ class Generator(nn.Module):
         dconv_filters = hparams.block_dconv_filters[block_idx]
         dconv_kernel = hparams.block_dconv_kernel[block_idx]
         self.block6 = nn.Sequential(
-            nn.ConvTranspose2d(previous_dconv_filters, dconv_filters, dconv_kernel, padding=get_same_padding(dconv_kernel)),
+            nn.ConvTranspose2d(previous_dconv_filters, dconv_filters, dconv_kernel, padding=dconv_same_padding(dconv_kernel)),
             self.activation_function,
             PixelNormalization(hparams.eps),
-            nn.ConvTranspose2d(dconv_filters, dconv_filters, dconv_kernel, padding=get_same_padding(dconv_kernel)),
+            nn.ConvTranspose2d(dconv_filters, dconv_filters, dconv_kernel, padding=dconv_same_padding(dconv_kernel)),
             self.activation_function,
             PixelNormalization(hparams.eps),
             nn.ConvTranspose2d(dconv_filters, 2, 1),
@@ -134,16 +126,6 @@ class Generator(nn.Module):
         x = self.block5(x)
         x = self.block6(x)
         return x
-
-
-class PixelNormalization(nn.Module):
-
-    def __init__(self, eps):
-        super().__init__()
-        self.eps = eps
-
-    def forward(self, x):
-        return x * (((x**2).mean(dim=1, keepdim=True) + self.eps).rsqrt())
 
 
 class Discriminator(nn.Module):
