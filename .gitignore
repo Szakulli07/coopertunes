@@ -191,5 +191,5 @@ venv.bak/
 tests/experiments
 local_workspace/
 
-# local data dirs
-data/
+# dataset
+data
