@@ -5,6 +5,7 @@ from torch import nn
 from torch.optim import Adam
 
 from coopertunes.hparams.GANSynth import GANSynthHParams
+from coopertunes.models.GANSynth import Discriminator, Generator
 
 
 class GANSynthSupervisor:
@@ -15,8 +16,8 @@ class GANSynthSupervisor:
         self.device = device
         self.hparams = hparams
 
-        self.generator_optimizer = Adam(self.generator.params(), lr=hparams.generator.lr, betas=hparams.generator.betas)
-        self.discriminator_optimizer = Adam(self.discriminator.params(), lr=hparams.discriminator.lr, betas=hparams.discriminator.betas)
+        self.generator_optimizer = Adam(self.generator.parameters(), lr=hparams.generator.lr, betas=hparams.generator.betas)
+        self.discriminator_optimizer = Adam(self.discriminator.parameters(), lr=hparams.discriminator.lr, betas=hparams.discriminator.betas)
 
         self.train_loader = None
 
@@ -40,9 +41,11 @@ class GANSynthSupervisor:
                 error_discriminator_real.backward()
 
                 noise = torch.randn(batch_size, self.hparams.generator.latent_dim, device=self.device)
-                fake_images = self.generator(noise, None)                                               # TODO: Add pitch
+                pitch = torch.zeros(batch_size, 61)
+                pitch[:, 3] = 1
+                fake_images = self.generator(noise, pitch)
                 label_fake = torch.zeros((batch_size,), dtype=torch.float, device=self.device)
-                output = self.discriminator(fake_images.detach()).view(-1)
+                output = self.discriminator(fake_images.detach())[0]
                 error_discriminator_fake = criterion(output, label_fake)
                 error_discriminator_fake.backward()
                 error_discriminator = error_discriminator_real + error_discriminator_fake
@@ -50,11 +53,15 @@ class GANSynthSupervisor:
 
                 self.generator_optimizer.zero_grad()
                 label = torch.ones((batch_size,), dtype=torch.float, device=self.device)
-                output = self.discriminator(fake_images).view(-1)
+                output = self.discriminator(fake_images)[0]
                 error_generator = criterion(output, label)
                 error_generator.backward()
                 self.generator_optimizer.step()
 
 
-
-
+if __name__ == "__main__":
+    hparams = GANSynthHParams()
+    generator = Generator(hparams.generator)
+    discriminator = Discriminator(hparams.discriminator)
+    supervisor = GANSynthSupervisor((generator, discriminator), torch.device("cpu"), hparams)
+    supervisor.train()
