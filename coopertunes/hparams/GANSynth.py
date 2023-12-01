@@ -5,6 +5,7 @@ class GANSynthHParams(HParams):
 
     def __init__(self):
         super().__init__()
+        self.epochs = 10
         self.generator = GeneratorHParams()
         self.discriminator = DiscriminatorHParams()
 
@@ -25,6 +26,9 @@ class GeneratorHParams:
 
         self.eps = 1e-8
 
+        self.lr = 8e-4
+        self.betas = (0, 0.99)
+
 
 
 class DiscriminatorHParams:
@@ -37,3 +41,6 @@ class DiscriminatorHParams:
 
         self.linear_in_size = 256 * 2 * 16
         self.pitch_dim = 61
+
+        self.lr = 8e-4
+        self.betas = (0, 0.99)

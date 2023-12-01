@@ -1,7 +1,9 @@
+import torch
 from torch import nn
 from torch.nn import functional as F
-import torch
-from coopertunes.hparams.GANSynth import DiscriminatorHParams, GANSynthHParams, GeneratorHParams
+
+from coopertunes.hparams.GANSynth import (DiscriminatorHParams,
+                                          GANSynthHParams, GeneratorHParams)
 from coopertunes.utils import PixelNormalization, dconv_same_padding
 
 
