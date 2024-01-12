@@ -256,8 +256,8 @@ class MelSpecVQVAE(nn.Module):
 
         loss = recons_loss + self.vq_weight * vq_loss
         return {'loss': loss,
-                'Reconstruction_Loss': recons_loss,
-                'VQ_Loss': vq_loss}
+                'recon': recons_loss,
+                'vq': vq_loss}
 
     def inference(self, x: torch.Tensor):
         """

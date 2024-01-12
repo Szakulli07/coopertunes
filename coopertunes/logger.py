@@ -42,6 +42,7 @@ class Logger:
     def _init_utils_fn(self):
         log_fn_dict = {
             'melspecvae': (self._log_step_vae, self._log_mel_batch),
+            'melspecvqvae': (self._log_step_vqvae, self._log_mel_batch),
         }
         return log_fn_dict[self.model_name]
 
@@ -57,6 +58,21 @@ class Logger:
             step,
             mean(self._running_vals[f'{prefix}/recon']),
             mean(self._running_vals[f'{prefix}/kld']),
+            mean(self._running_vals[f'{prefix}/step_time']),
+        )
+
+    def _log_step_vqvae(
+        self,
+        epoch: int,
+        step: int,
+        prefix: Literal['training', 'validation'] = 'training',
+    ):
+        log_info(
+            'Epoch: %d | Step: %d | LossRecon: %.4f | LossVQ: %.4f | StepTime: %.2f[s]',
+            epoch,
+            step,
+            mean(self._running_vals[f'{prefix}/recon']),
+            mean(self._running_vals[f'{prefix}/vq']),
             mean(self._running_vals[f'{prefix}/step_time']),
         )
 

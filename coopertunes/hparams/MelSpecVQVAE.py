@@ -9,6 +9,10 @@ class MelSpecVQVAEHParams(HParams):
     def __init__(self, hparams: Optional[Union[Path, dict[str, Any]]] = None):
         super().__init__()
 
+        self.lr: float = 2e-4
+        self.betas: tuple[float, float] = (0.99, 0.999)
+        self.lr_decay: float = 0.999
+
         self.conv_filters: list[int] = [128, 256, 256]
         self.conv_kernels: list[int] = [3, 3, 3]
         self.conv_strides: list[int | tuple[int]] = [2, 2, 2]
