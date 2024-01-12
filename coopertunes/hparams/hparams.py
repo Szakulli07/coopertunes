@@ -11,8 +11,8 @@ class HParams(ABC):
 
     @abstractmethod
     def __init__(self) -> None:
-        self.train_data_dirs: list[Path] = [Path("data/train")]
-        self.valid_data_dirs: list[Path] = [Path("data/valid")]
+        self.train_data_dirs: list[Path] = [Path("/mnt/m/cowork/t2/l.bondaruk/beethoven")]
+        self.valid_data_dirs: list[Path] = [Path("/mnt/m/cowork/t2/l.bondaruk/beethoven")]
         self.checkpoints_dir: Path = Path("models/ckpt")
         self.logs_dir: Path = Path("models/log")
 

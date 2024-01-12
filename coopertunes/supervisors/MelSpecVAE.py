@@ -102,12 +102,9 @@ class MelSpecVAESupervisor:
         kld_list = []
 
         for i, batch in enumerate(self.val_dl):
-            print('i')
             mels = batch["mels"].to(self.device)
             reconstruct, x, mu, log_var = self.model(mels)
             loss = self.model.loss_function(reconstruct, x, mu, log_var)
-
-            print('j')
 
             loss_list.append(loss["loss"].item())
             recon_list.append(loss["recon"].item())
