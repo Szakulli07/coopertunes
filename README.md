@@ -26,8 +26,6 @@ Before install `coopertunes` module you need to install `pytorch` framework. It 
 Now you need to install `coopertunes` module:
 
 `pip install -e .`
-`pip install -r requirements.txt`
-
 
 # How should I write my commits?
 

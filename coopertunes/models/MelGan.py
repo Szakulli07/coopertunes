@@ -39,9 +39,12 @@ class ResnetBlock(nn.Module):
 
 
 class MelGanGenerator(nn.Module):
+    """
+    Generating raw audio from mel spectrogram with GAN generator.
+    """
     def __init__(self, hparams: HParams):
         super().__init__()
-        ratios = [8, 8, 2, 2]
+        ratios = hparams.generator_ratios
         self.hop_length = np.prod(ratios)
         mult = int(2 ** len(ratios))
 
@@ -80,6 +83,9 @@ class MelGanGenerator(nn.Module):
         self.apply(weights_init)
 
     def forward(self, x):
+        return self.model(x)
+    
+    def inference(self, x):
         return self.model(x)
 
 

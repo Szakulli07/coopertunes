@@ -32,6 +32,7 @@ _CONSOLE_HANDLER = logging.StreamHandler()
 _CONSOLE_HANDLER.setFormatter(_FORMATTER)
 _LOGGER.addHandler(_CONSOLE_HANDLER)
 
+_SAMPLE_NORMALIZATION_FACTOR = 32768
 
 def log_debug(*args, **kwargs):
     _LOGGER.debug(*args, **kwargs)
@@ -212,7 +213,7 @@ def save_sample(file_path, sampling_rate, audio):
         sampling_rate (int): sampling rate of audio (usually 22050)
         audio (torch.FloatTensor): torch array containing audio in [-1, 1]
     """
-    audio = (audio.numpy() * 32768).astype("int16")
+    audio = (audio.numpy() * _SAMPLE_NORMALIZATION_FACTOR).astype("int16")
     scipy.io.wavfile.write(file_path, sampling_rate, audio)
 
 

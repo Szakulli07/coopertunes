@@ -23,8 +23,10 @@ dependencies = [
   "numpy==1.23.5",
   "librosa==0.9.1",
   "scipy==1.11.4",
-  "argparse",
-  "torch-summary==1.4.5"]
+  "argparse==1.4.0",
+  "torch-summary==1.4.5",
+  "autopep-8==2.0.4",
+  "black==23.12.1"]
 
 [project.urls]
 "Homepage" = "https://github.com/Szakulli07/coopertunes"

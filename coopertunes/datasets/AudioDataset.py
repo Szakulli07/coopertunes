@@ -30,16 +30,12 @@ class AudioDataset(torch.utils.data.Dataset):
         self.sampling_rate = sampling_rate
         self.segment_length = segment_length
         self.audio_files = files_to_list(training_files)
-        # self.audio_files = [ x for x in self.audio_files]
-        random.seed(1234)
         random.shuffle(self.audio_files)
         self.augment = augment
 
     def __getitem__(self, index):
-        # Read audio
         filename = self.audio_files[index]
         audio, sampling_rate = self.load_wav_to_torch(filename)
-        # Take segment
         if audio.size(0) >= self.segment_length:
             max_audio_start = audio.size(0) - self.segment_length
             audio_start = random.randint(0, max_audio_start)
@@ -49,7 +45,6 @@ class AudioDataset(torch.utils.data.Dataset):
                 audio, (0, self.segment_length - audio.size(0)), "constant"
             ).data
 
-        # audio = audio / 32768.0
         return audio.unsqueeze(0)
 
     def __len__(self):

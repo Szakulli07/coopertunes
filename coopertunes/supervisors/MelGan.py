@@ -2,8 +2,10 @@ import os
 import time
 
 import torch
+import librosa
 import torch.nn.functional as F
 import numpy as np
+import soundfile as sf
 from torch.utils.data import DataLoader
 from pathlib import Path
 
@@ -14,6 +16,11 @@ from coopertunes.models import MelGanGenerator, MelGanDiscriminator, Audio2Mel
 from coopertunes.utils import save_sample, get_default_device
 
 class MelGanSupervisor:
+    """Supervisor for MelGAN
+    After init you can launch training with `train` method
+    You can test trained checkpoints with `test` method on given raw audio
+    """
+
     def __init__(self, 
                  generator: MelGanGenerator, 
                  discriminator: MelGanDiscriminator,
@@ -24,21 +31,18 @@ class MelGanSupervisor:
         self.netG = generator.to(device)
         self.netD = discriminator.to(device)
         self.hparams = hparams
-        print(f"Chosen device: {self.device}")
-
-        self.epoch = 1
-        self.step = 1
 
         self._logger = Logger("melgan", self.hparams, device)
         self.writer = self._logger.get_summary_writer()
 
-        self.optG = torch.optim.Adam(self.netG.parameters(), lr=1e-4, betas=(0.5, 0.9))
-        self.optD = torch.optim.Adam(self.netD.parameters(), lr=1e-4, betas=(0.5, 0.9))
+        self.optG = torch.optim.Adam(
+            self.netG.parameters(), lr=hparams.learning_rate, betas=hparams.adam_betas)
+        self.optD = torch.optim.Adam(
+            self.netD.parameters(), lr=hparams.learning_rate, betas=hparams.adam_betas)
 
     def train(self):
-        root = Path(self.hparams.save_path)
+        root = Path(self.hparams.summary_path)
         root.mkdir(parents=True, exist_ok=True)
-        load_root = Path(self.hparams.load_path) if self.hparams.load_path else None
 
         train_loader, test_loader = self._create_dataloaders()
         
@@ -53,7 +57,8 @@ class MelGanSupervisor:
 
             audio = x_t.squeeze().cpu()
             save_sample(root / ("original_%d.wav" % i), self.hparams.sampling_rate, audio)
-            self.writer.add_audio("original/sample_%d.wav" % i, audio, 0, sample_rate=self.hparams.sampling_rate)
+            self.writer.add_audio(
+                "original/sample_%d.wav" % i, audio, 0, sample_rate=self.hparams.sampling_rate)
 
             if i == self.hparams.n_test_samples - 1:
                 break
@@ -115,7 +120,7 @@ class MelGanSupervisor:
                 steps += 1
 
                 if steps % self.hparams.save_interval == 0:
-                    self.eval(root, test_voc, test_audio, epoch, costs)
+                    self._eval(root, test_voc, test_audio, epoch, costs)
 
                 if steps % self.hparams.log_interval == 0:
                     print(
@@ -130,13 +135,13 @@ class MelGanSupervisor:
                     costs = []
                     start = time.time()
         
-    def eval(self, root, test_voc, test_audio, epoch, costs):
+    def _eval(self, root, test_voc, test_audio, epoch, costs):
         best_mel_reconst = 1000000
         with torch.no_grad():
             for i, (voc, _) in enumerate(zip(test_voc, test_audio)):
                 pred_audio = self.netG(voc)
                 pred_audio = pred_audio.squeeze().cpu()
-                save_sample(root / ("generated_%d.wav" % i), 22050, pred_audio)
+                save_sample(root / ("generated_%d.wav" % i), hparams.sampling_rate, pred_audio)
                 self.writer.add_audio(
                     "generated/sample_%d.wav" % i,
                     pred_audio,
@@ -155,6 +160,36 @@ class MelGanSupervisor:
             torch.save(self.netD.state_dict(), root / "best_netD.pt")
             torch.save(self.netG.state_dict(), root / "best_netG.pt")
 
+
+    def load_checkpoint(self,checkpoint_path: str=None):
+        """
+        Loads chackpoint given as argument. 
+        If there is no arguments, it will load default checkpoint given in hparams.
+        """
+        checkpoint_path = self.hparams.default_checkpoint if checkpoint_path is None else Path(checkpoint_path)   
+        self.netG.load_state_dict(torch.load(checkpoint_path, map_location=self.device))
+
+
+    def test(self, audio_path: str, output_path: str = "melgan_result.wav"):
+        """
+        It allows to reconstruct given raw audio using currently loaded generator.
+        Audio will be converted to Mel Spectrogram, then back to raw audio, and saved.
+        """
+        audio, sr = librosa.core.load(audio_path)
+        audio = torch.from_numpy(audio)[None]
+        spec = self.fft(audio.unsqueeze(1).to(self.device))
+        reconstructed = self.netG(spec.to(self.device)).squeeze((0,1)).detach().cpu().numpy()
+        sf.write(output_path, reconstructed, sr)
+
+
+    def __call__(self, spectrogram: np.array):
+        """
+        Converts spectrogram to raw audio. 
+        spectrogram's shape is [1, bins, len]
+        """
+        return self.netG(spectrogram.to(self.device)).squeeze(1)
+
+
     def _create_dataloaders(self):
         train_set = AudioDataset(
         os.path.join(self.hparams.processed_data_dir, "train_files.txt"), self.hparams.seq_len, sampling_rate=self.hparams.sampling_rate
@@ -170,8 +205,16 @@ class MelGanSupervisor:
         return train_loader, test_loader
 
 if __name__ == "__main__":
+    TRAIN = False
+    TEST = True
     hparams = MelGanHParams()
     generator = MelGanGenerator(hparams)
     discriminator = MelGanDiscriminator(hparams)
     supervisor = MelGanSupervisor(generator, discriminator, get_default_device(), hparams)
-    supervisor.train()
+
+    if TRAIN:
+        supervisor.train()
+
+    if TEST:
+        supervisor.load_checkpoint()
+        supervisor.test("litwo.wav")

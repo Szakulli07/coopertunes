@@ -72,6 +72,3 @@ class HParams(ABC):
 
     def __repr__(self) -> str:
         return self._dumps()
-    
-    def get(self,name):
-        return vars(self)[name][0]
