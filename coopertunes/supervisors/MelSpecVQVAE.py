@@ -5,18 +5,18 @@ import torch
 from einops import rearrange
 from torch.utils.data import DataLoader
 
-from coopertunes.datasets import MelDataset
-from coopertunes.hparams import MelSpecVAEHParams
-from coopertunes.logger import Logger
-from coopertunes.models import MelSpecVAE
-from coopertunes.utils import log_info
+from ..datasets import MelDataset
+from ..hparams import MelSpecVQVAEHParams
+from ..logger import Logger
+from ..models import MelSpecVQVAE
+from ..utils import log_info
 
 
-class MelSpecVAESupervisor:
-    """Supervisor for MelSpecVAESupervisor
+class MelSpecVQVAESupervisor:
+    """Supervisor for MelSpecVQVAESupervisor
     After init you can launch training with `train` method"""
 
-    def __init__(self, model: MelSpecVAE, device: torch.device, hparmas: MelSpecVAEHParams):
+    def __init__(self, model: MelSpecVQVAE, device: torch.device, hparmas: MelSpecVQVAEHParams):
         self.model = model
         self.device = device
         self.hparams = hparmas
@@ -24,12 +24,11 @@ class MelSpecVAESupervisor:
         self.epoch = 1
         self.step = 1
 
-        self._logger = Logger("melspecvae", self.hparams, device)
+        self._logger = Logger("melspecvqvae", self.hparams, device)
 
         self.train_dl, self.val_dl = self._build_loaders()
 
-        self.optimizer = torch.optim.AdamW(
-            model.parameters(), lr=hparmas.lr, betas=hparams.betas)
+        self.optimizer = torch.optim.AdamW(model.parameters(), lr=hparmas.lr, betas=hparams.betas)
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(
             self.optimizer,
             gamma=self.hparams.lr_decay
@@ -64,12 +63,12 @@ class MelSpecVAESupervisor:
                 batch = next(train_dl_iter)
                 mels = batch["mels"].to(self.device)
 
-                reconstruct, x, mu, log_var = self.model(mels)
-                loss = self.model.loss_function(reconstruct, x, mu, log_var)
+                reconstruct, x, vq_loss = self.model(mels)
+                loss = self.model.loss_function(reconstruct, x, vq_loss)
                 loss["loss"].backward()
 
             grad_norm = torch.nn.utils.clip_grad_norm_(
-                self.model.parameters(), hparams.grad_clip_thresh
+               self.model.parameters(), hparams.grad_clip_thresh
             )
 
             self.optimizer.step()
@@ -78,7 +77,7 @@ class MelSpecVAESupervisor:
             stats = {
                 'loss': loss["loss"].item(),
                 'recon': loss["recon"].item(),
-                'kld': loss["kld"].item(),
+                'vq': loss["vq"].item(),
                 'grad_norm': grad_norm.item(),
                 'learning_rate': self.optimizer.param_groups[0]['lr'],
                 'step_time': (time.time() - start),
@@ -104,12 +103,12 @@ class MelSpecVAESupervisor:
 
         for i, batch in enumerate(self.val_dl):
             mels = batch["mels"].to(self.device)
-            reconstruct, x, mu, log_var = self.model(mels)
-            loss = self.model.loss_function(reconstruct, x, mu, log_var)
+            reconstruct, x, vq_loss = self.model(mels)
+            loss = self.model.loss_function(reconstruct, x, vq_loss)
 
             loss_list.append(loss["loss"].item())
             recon_list.append(loss["recon"].item())
-            kld_list.append(loss["kld"].item())
+            kld_list.append(loss["vq"].item())
 
             if i == 0:
                 reconstructs = [None] * batch["mels"].shape[0]
@@ -119,12 +118,11 @@ class MelSpecVAESupervisor:
         stats = {
             'loss': mean(loss_list),
             'recon': mean(recon_list),
-            'kld': mean(kld_list),
+            'vq': mean(kld_list),
             'step_time': (time.time() - start),
         }
 
-        self._logger.log_audio(
-            batch=reconstructs, step=self.step, audio_type='output')
+        self._logger.log_audio(batch=reconstructs, step=self.step, audio_type='output')
         self._logger.update_running_vals(stats, 'validation')
         self._logger.log_step(self.epoch, self.step, prefix='validation')
         self._logger.log_running_vals_to_tb(self.step)
@@ -178,7 +176,7 @@ class MelSpecVAESupervisor:
             "step": self.step,
             "model_state_dict": self.model.state_dict(),
             "optimizer_state_dict": self.optimizer.state_dict()
-        }, (self.hparams.checkpoints_dir/str(self.step)).with_suffix(".pt")
+            }, (self.hparams.checkpoints_dir/str(self.step)).with_suffix(".pt")
         )
         log_info("Saved checkpoint after %d step", self.step)
 
@@ -211,9 +209,9 @@ class MelSpecVAESupervisor:
 if __name__ == "__main__":
     from torchsummary import summary
 
-    hparams = MelSpecVAEHParams()
-    mel_spec_vae = MelSpecVAE(hparams)
+    hparams = MelSpecVQVAEHParams()
+    mel_spec_vae = MelSpecVQVAE(hparams)
     summary(mel_spec_vae)
     cpu_device = torch.device("cpu")
-    vae_supervisor = MelSpecVAESupervisor(mel_spec_vae, cpu_device, hparams)
+    vae_supervisor = MelSpecVQVAESupervisor(mel_spec_vae, cpu_device, hparams)
     vae_supervisor.train()
