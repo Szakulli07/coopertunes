@@ -34,6 +34,7 @@ _LOGGER.addHandler(_CONSOLE_HANDLER)
 
 _SAMPLE_NORMALIZATION_FACTOR = 32768
 
+
 def log_debug(*args, **kwargs):
     _LOGGER.debug(*args, **kwargs)
 
@@ -66,7 +67,8 @@ def normalize_audio(
         audio = librosa.to_mono(audio)
     # Resample
     if from_sample_rate != to_sample_rate:
-        audio = librosa.resample(audio, orig_sr=from_sample_rate, target_sr=to_sample_rate)
+        audio = librosa.resample(
+            audio, orig_sr=from_sample_rate, target_sr=to_sample_rate)
     return audio
 
 

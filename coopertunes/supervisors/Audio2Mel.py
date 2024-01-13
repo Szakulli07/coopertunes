@@ -3,11 +3,11 @@ from coopertunes.hparams import Audio2MelHParams
 
 import torch
 
+
 class Audio2MelSupervisor:
     def __init__(self, model: Audio2Mel, device: torch.device, hparams: Audio2MelHParams):
         self.model = Audio2Mel(hparams).to(device)
         self.device = device
-        
 
     def convert(self, audio):
         """

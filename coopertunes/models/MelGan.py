@@ -7,6 +7,7 @@ import numpy as np
 
 from coopertunes.hparams import HParams
 
+
 def weights_init(m):
     classname = m.__class__.__name__
     if classname.find("Conv") != -1:
@@ -15,8 +16,10 @@ def weights_init(m):
         m.weight.data.normal_(1.0, 0.02)
         m.bias.data.fill_(0)
 
+
 def WNConv1d(*args, **kwargs):
     return weight_norm(nn.Conv1d(*args, **kwargs))
+
 
 def WNConvTranspose1d(*args, **kwargs):
     return weight_norm(nn.ConvTranspose1d(*args, **kwargs))
@@ -42,6 +45,7 @@ class MelGanGenerator(nn.Module):
     """
     Generating raw audio from mel spectrogram with GAN generator.
     """
+
     def __init__(self, hparams: HParams):
         super().__init__()
         ratios = hparams.generator_ratios
@@ -50,7 +54,8 @@ class MelGanGenerator(nn.Module):
 
         model = [
             nn.ReflectionPad1d(3),
-            WNConv1d(hparams.n_mel_channels, mult * hparams.ngf, kernel_size=7, padding=0),
+            WNConv1d(hparams.n_mel_channels, mult *
+                     hparams.ngf, kernel_size=7, padding=0),
         ]
 
         # Upsample to raw audio scale
@@ -68,7 +73,8 @@ class MelGanGenerator(nn.Module):
             ]
 
             for j in range(hparams.n_residual_layers):
-                model += [ResnetBlock(mult * hparams.ngf // 2, dilation=3 ** j)]
+                model += [ResnetBlock(mult * hparams.ngf //
+                                      2, dilation=3 ** j)]
 
             mult //= 2
 
@@ -84,7 +90,7 @@ class MelGanGenerator(nn.Module):
 
     def forward(self, x):
         return self.model(x)
-    
+
     def inference(self, x):
         return self.model(x)
 
@@ -145,7 +151,8 @@ class MelGanDiscriminator(nn.Module):
         for i in range(hparams.num_D):
             self.model[f"disc_{i}"] = MelGanNLayerDiscriminator(hparams)
 
-        self.downsample = nn.AvgPool1d(4, stride=2, padding=1, count_include_pad=False)
+        self.downsample = nn.AvgPool1d(
+            4, stride=2, padding=1, count_include_pad=False)
         self.apply(weights_init)
 
     def forward(self, x):

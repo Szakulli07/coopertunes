@@ -45,7 +45,7 @@ class Logger:
             'melgan': (self._log_step_placeholder, self._log_audio_placeholder)
         }
         return log_fn_dict[self.model_name]
-    
+
     def _log_step_placeholder():
         pass
 

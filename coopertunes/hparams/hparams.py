@@ -34,8 +34,10 @@ class HParams(ABC):
                 self._update_with_dict(hparams)
             else:
                 self._update_with_file(hparams)
-            self.train_data_dirs = [Path(path) for path in self.train_data_dirs]
-            self.valid_data_dirs = [Path(path) for path in self.valid_data_dirs]
+            self.train_data_dirs = [Path(path)
+                                    for path in self.train_data_dirs]
+            self.valid_data_dirs = [Path(path)
+                                    for path in self.valid_data_dirs]
             self.checkpoints_dir = Path(self.checkpoints_dir)
             self.logs_dir = Path(self.logs_dir)
 
