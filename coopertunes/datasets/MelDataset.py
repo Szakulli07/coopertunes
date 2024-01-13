@@ -28,7 +28,8 @@ class MelDataset(Dataset):
         filepaths = []
         for data_dir in self.data_dirs:
             filepaths.extend(
-                [fp for ext in AUDIO_EXTENSIONS for fp in data_dir.rglob(f"*{ext}")]
+                [fp for ext in AUDIO_EXTENSIONS for fp in data_dir.rglob(
+                    f"*{ext}")]
             )
         return filepaths
 

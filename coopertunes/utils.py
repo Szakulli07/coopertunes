@@ -6,12 +6,13 @@ from typing import TypeVar
 
 import librosa
 import matplotlib.pyplot as plt
+import scipy.io.wavfile
 import numpy as np
 import torch
 from coloredlogs import ColoredFormatter
 from torch import nn
 
-from .distributed import global_rank, local_rank
+from coopertunes.distributed import global_rank, local_rank
 
 L = TypeVar("L")
 
@@ -30,6 +31,8 @@ _FORMATTER = ColoredFormatter(
 _CONSOLE_HANDLER = logging.StreamHandler()
 _CONSOLE_HANDLER.setFormatter(_FORMATTER)
 _LOGGER.addHandler(_CONSOLE_HANDLER)
+
+_SAMPLE_NORMALIZATION_FACTOR = 32768
 
 
 def log_debug(*args, **kwargs):
@@ -64,7 +67,8 @@ def normalize_audio(
         audio = librosa.to_mono(audio)
     # Resample
     if from_sample_rate != to_sample_rate:
-        audio = librosa.resample(audio, orig_sr=from_sample_rate, target_sr=to_sample_rate)
+        audio = librosa.resample(
+            audio, orig_sr=from_sample_rate, target_sr=to_sample_rate)
     return audio
 
 
@@ -102,6 +106,13 @@ def convert_audios2mels_h(audios, hparams):
         hparams.fmin,
         hparams.fmax
     )
+
+
+def get_default_device():
+    if torch.cuda.is_available():
+        return "cuda"
+    else:
+        return "cpu"
 
 
 def convert_mels2audios(
@@ -194,6 +205,18 @@ def set_seed(seed: int):
 
 def calc_n_params(module):
     return sum(p.numel() for p in module.parameters())
+
+
+def save_sample(file_path, sampling_rate, audio):
+    """Helper function to save sample
+
+    Args:
+        file_path (str or pathlib.Path): save file path
+        sampling_rate (int): sampling rate of audio (usually 22050)
+        audio (torch.FloatTensor): torch array containing audio in [-1, 1]
+    """
+    audio = (audio.numpy() * _SAMPLE_NORMALIZATION_FACTOR).astype("int16")
+    scipy.io.wavfile.write(file_path, sampling_rate, audio)
 
 
 class PrintLayer(nn.Module):

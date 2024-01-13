@@ -2,7 +2,7 @@ from abc import abstractmethod
 
 from torch import nn
 
-from ..hparams import HParams
+from coopertunes.hparams import HParams
 
 
 class Model(nn.Module):
