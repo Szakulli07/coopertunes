@@ -6,8 +6,8 @@ from typing import Any, Literal
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from .hparams import HParams
-from .utils import convert_mels2audios_h, log_info, plot_audio, plot_mel
+from coopertunes.hparams import HParams
+from coopertunes.utils import convert_mels2audios_h, log_info, plot_audio, plot_mel
 
 
 class Logger:
@@ -42,8 +42,15 @@ class Logger:
     def _init_utils_fn(self):
         log_fn_dict = {
             'melspecvae': (self._log_step_vae, self._log_mel_batch),
+            'melgan': (self._log_step_placeholder, self._log_audio_placeholder)
         }
         return log_fn_dict[self.model_name]
+
+    def _log_step_placeholder():
+        pass
+
+    def _log_audio_placeholder():
+        pass
 
     def _log_step_vae(
         self,
@@ -89,3 +96,6 @@ class Logger:
         batch = [audio.to(self.device) for audio in batch]
         for audio_index, audio in enumerate(batch):
             self._log_mel(audio, audio_type, audio_index, step)
+
+    def get_summary_writer(self):
+        return self._logger

@@ -5,11 +5,11 @@ import torch
 from einops import rearrange
 from torch.utils.data import DataLoader
 
-from ..datasets import MelDataset
-from ..hparams import MelSpecVAEHParams
-from ..logger import Logger
-from ..models import MelSpecVAE
-from ..utils import log_info
+from coopertunes.datasets import MelDataset
+from coopertunes.hparams import MelSpecVAEHParams
+from coopertunes.logger import Logger
+from coopertunes.models import MelSpecVAE
+from coopertunes.utils import log_info
 
 
 class MelSpecVAESupervisor:
@@ -28,7 +28,8 @@ class MelSpecVAESupervisor:
 
         self.train_dl, self.val_dl = self._build_loaders()
 
-        self.optimizer = torch.optim.AdamW(model.parameters(), lr=hparmas.lr, betas=hparams.betas)
+        self.optimizer = torch.optim.AdamW(
+            model.parameters(), lr=hparmas.lr, betas=hparams.betas)
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(
             self.optimizer,
             gamma=self.hparams.lr_decay
@@ -68,7 +69,7 @@ class MelSpecVAESupervisor:
                 loss["loss"].backward()
 
             grad_norm = torch.nn.utils.clip_grad_norm_(
-               self.model.parameters(), hparams.grad_clip_thresh
+                self.model.parameters(), hparams.grad_clip_thresh
             )
 
             self.optimizer.step()
@@ -125,7 +126,8 @@ class MelSpecVAESupervisor:
             'step_time': (time.time() - start),
         }
 
-        self._logger.log_audio(batch=reconstructs, step=self.step, audio_type='output')
+        self._logger.log_audio(
+            batch=reconstructs, step=self.step, audio_type='output')
         self._logger.update_running_vals(stats, 'validation')
         self._logger.log_step(self.epoch, self.step, prefix='validation')
         self._logger.log_running_vals_to_tb(self.step)
@@ -179,7 +181,7 @@ class MelSpecVAESupervisor:
             "step": self.step,
             "model_state_dict": self.model.state_dict(),
             "optimizer_state_dict": self.optimizer.state_dict()
-            }, (self.hparams.checkpoints_dir/str(self.step)).with_suffix(".pt")
+        }, (self.hparams.checkpoints_dir/str(self.step)).with_suffix(".pt")
         )
         log_info("Saved checkpoint after %d step", self.step)
 

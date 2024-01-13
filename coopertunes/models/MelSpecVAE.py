@@ -4,7 +4,7 @@ from einops import rearrange
 from torch import nn
 from torch.nn import functional as F
 
-from ..hparams import MelSpecVAEHParams
+from coopertunes.hparams import MelSpecVAEHParams
 
 
 class MelSpecVAE(nn.Module):
@@ -33,11 +33,13 @@ class MelSpecVAE(nn.Module):
         )
 
         self.fc_mu = nn.Linear(
-            int(self.last_filter*(self.before_latent[0]*self.before_latent[1])),
+            int(self.last_filter *
+                (self.before_latent[0]*self.before_latent[1])),
             self.latent_dim)
 
         self.fc_var = nn.Linear(
-            int(self.last_filter*(self.before_latent[0]*self.before_latent[1])),
+            int(self.last_filter *
+                (self.before_latent[0]*self.before_latent[1])),
             self.latent_dim)
 
         self._build_decoder(
