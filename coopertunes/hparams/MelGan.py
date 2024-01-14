@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Any, Optional, Union
 
@@ -12,8 +13,9 @@ class MelGanHParams(HParams):
     def __init__(self, hparams: Optional[Union[Path, dict[str, Any]]] = None):
         super().__init__()
 
-        self.summary_path = Path("models/summary")
-        self.default_checkpoint = Path(
+        self.summary_path = os.path.join("models", "summary")
+        self.default_checkpoint = os.path.join("coopertunes", "checkpoints", "MelGan", "multi_speaker.pt")
+        Path(
             "coopertunes/checkpoints/MelGan/multi_speaker.pt")
 
         # Model
