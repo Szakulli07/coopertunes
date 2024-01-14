@@ -3,6 +3,7 @@ from typing import Tuple
 import torch
 from torch import nn
 from torch.optim import Adam
+from torch.nn import functional as F
 
 from coopertunes.hparams.GANSynth import GANSynthHParams
 from coopertunes.models.GANSynth import Discriminator, Generator
@@ -43,9 +44,7 @@ class GANSynthSupervisor:
                 error_discriminator_real.backward()
 
                 noise = torch.randn(batch_size, self.hparams.generator.latent_dim, device=self.device)
-                # TODO: change to random pitch
-                fake_pitch = torch.zeros(batch_size, 61)
-                fake_pitch[:, 3] = 1
+                fake_pitch = F.one_hot(torch.randint(61, (batch_size,), device=self.device), 61).float()
                 fake_images = self.generator(noise, fake_pitch)
                 label_fake = torch.zeros((batch_size,), dtype=torch.float, device=self.device)
                 (discriminator_output, discriminator_pitch) = self.discriminator(fake_images.detach())
