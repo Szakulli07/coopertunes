@@ -192,7 +192,7 @@ class MelSpecVAE(nn.Module):
         )
 
         loss = recons_loss + kld_loss * self.kld_weight
-        return {"loss": loss, "recon": recons_loss.detach(), "kld": -kld_loss.detach()}
+        return {"loss": loss, "recon": recons_loss.detach(), "kld": kld_loss.detach()}
 
     def forward(self, x: torch.Tensor):
         mu, log_var = self.encode(x)
