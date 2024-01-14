@@ -1,11 +1,18 @@
+import os
 import time
 from statistics import mean
 
+import deepspeed
 import torch
 from einops import rearrange
 from torch.utils.data import DataLoader
 
 from ..datasets import MelDataset
+from coopertunes.distributed import (
+    get_world_size,
+    global_rank,
+    is_global_leader
+)
 from ..hparams import MelSpecVQVAEHParams
 from ..logger import Logger
 from ..models import MelSpecVQVAE
@@ -24,30 +31,33 @@ class MelSpecVQVAESupervisor:
         self.epoch = 1
         self.step = 1
 
-        self._logger = Logger("melspecvqvae", self.hparams, device)
+        if is_global_leader():
+            self._logger = Logger("melspecvqvae", self.hparams, device)
 
         self.train_dl, self.val_dl = self._build_loaders()
-
-        self.optimizer = torch.optim.AdamW(model.parameters(), lr=hparmas.lr, betas=hparams.betas)
-        self.scheduler = torch.optim.lr_scheduler.ExponentialLR(
-            self.optimizer,
-            gamma=self.hparams.lr_decay
-        )
+        self.engines = self._build_engines()
 
         if self.hparams.base_checkpoint:
             self._load_checkpoint()
         else:
             log_info("Initilizing fresh training")
 
+        if is_global_leader():
+            self.hparams.dumps_to_file()
+
     def train(self):
-        """train main function."""
-        log_info("Started training")
+
+        if is_global_leader():
+            log_info('Started training')
+
+        for engine in self.engines.values():
+            engine.train()
+
         train_dl_iter = self._make_infinite_epochs(self.train_dl)
-        self.model.to(self.device)
-        self.model.train()
 
         # Training loop
         while True:
+            torch.cuda.synchronize()
             # break training if reached total_steps
             if self.step >= self.hparams.total_steps:
                 log_info("Max steps reached. Training finished")
@@ -58,37 +68,42 @@ class MelSpecVQVAESupervisor:
 
             start = time.time()
 
-            self.optimizer.zero_grad()
+            self.engines['model'].zero_grad()
             for _ in range(hparams.grad_accumulation_steps):
                 batch = next(train_dl_iter)
                 mels = batch["mels"].to(self.device)
 
-                reconstruct, x, vq_loss = self.model(mels)
-                loss = self.model.loss_function(reconstruct, x, vq_loss)
-                loss["loss"].backward()
+                reconstruct, x, vq_loss = self.engines['model'](mels)
+                loss = self.engines['model'].loss_function(reconstruct, x, vq_loss)
+                self.engines['model'].backward(loss["loss"])
 
             grad_norm = torch.nn.utils.clip_grad_norm_(
-               self.model.parameters(), hparams.grad_clip_thresh
+               self.engines['model'].parameters(), hparams.grad_clip_thresh
             )
 
-            self.optimizer.step()
-            self.scheduler.step()
+            self.engines['model'].step()
+
+            torch.cuda.synchronize()
 
             stats = {
                 'loss': loss["loss"].item(),
                 'recon': loss["recon"].item(),
                 'vq': loss["vq"].item(),
                 'grad_norm': grad_norm.item(),
-                'learning_rate': self.optimizer.param_groups[0]['lr'],
+                'learning_rate': self.engines['model'].get_lr()[0],
                 'step_time': (time.time() - start),
             }
-            self._log_train_stats(stats)
+            if is_global_leader():
+                self._log_train_stats(stats)
 
             if self.step % self.hparams.steps_per_ckpt == 0:
                 self._save_checkpoint()
-                self.model.eval()
-                self.eval()
-                self.model.train()
+                if is_global_leader():
+                    for engine in self.engines.values():
+                        engine.eval()
+                    self.eval()
+                    for engine in self.engines.values():
+                        engine.train()
 
             self.step += 1
 
@@ -99,7 +114,7 @@ class MelSpecVQVAESupervisor:
         start = time.time()
         loss_list = []
         recon_list = []
-        kld_list = []
+        vq_list = []
 
         for i, batch in enumerate(self.val_dl):
             mels = batch["mels"].to(self.device)
@@ -108,7 +123,7 @@ class MelSpecVQVAESupervisor:
 
             loss_list.append(loss["loss"].item())
             recon_list.append(loss["recon"].item())
-            kld_list.append(loss["vq"].item())
+            vq_list.append(loss["vq"].item())
 
             if i == 0:
                 reconstructs = [None] * batch["mels"].shape[0]
@@ -118,7 +133,7 @@ class MelSpecVQVAESupervisor:
         stats = {
             'loss': mean(loss_list),
             'recon': mean(recon_list),
-            'vq': mean(kld_list),
+            'vq': mean(vq_list),
             'step_time': (time.time() - start),
         }
 
@@ -132,18 +147,30 @@ class MelSpecVQVAESupervisor:
         train_dataset = self._build_dataset(training=True)
         train_dl = self._create_dataloader(train_dataset, training=True)
 
-        val_dataset = self._build_dataset(training=False)
-        val_dl = self._create_dataloader(val_dataset, training=False)
+        if not is_global_leader():
+            val_dl = None
+        else:
+            val_dataset = self._build_dataset(training=False)
+            val_dl = self._create_dataloader(val_dataset, training=False)
 
-        for i, batch in enumerate(val_dl):
-            if i == 0:
-                mels = [None] * batch["mels"].shape[0]
-                for j, mel in enumerate(rearrange(batch["mels"], 'n 1 c t ->n c t')):
-                    mels[j] = mel
+            for i, batch in enumerate(val_dl):
+                if i == 0:
+                    mels = [None] * batch["mels"].shape[0]
+                    for j, mel in enumerate(rearrange(batch["mels"], 'n 1 c t ->n c t')):
+                        mels[j] = mel
 
-        self._logger.log_audio(mels, step=0, audio_type='target')
+            self._logger.log_audio(mels, step=0, audio_type='target')
 
         return train_dl, val_dl
+
+    def _build_engines(self):
+        engine, *_ = deepspeed.initialize(
+            model=self.model,
+            model_parameters=self.model.parameters(),
+            config=self.hparams.ds_cfg,
+        )
+        engines = {'model': engine}
+        return engines
 
     def _create_dataloader(
         self, dataset: MelDataset, training: bool
@@ -172,12 +199,9 @@ class MelSpecVQVAESupervisor:
 
     def _save_checkpoint(self):
         self.hparams.checkpoints_dir.mkdir(parents=True, exist_ok=True)
-        torch.save({
-            "step": self.step,
-            "model_state_dict": self.model.state_dict(),
-            "optimizer_state_dict": self.optimizer.state_dict()
-            }, (self.hparams.checkpoints_dir/str(self.step)).with_suffix(".pt")
-        )
+        for label, engine in self.engines.items():
+            tag = f'{label}_{self.step}'
+            engine.save_checkpoint(self.hparams.checkpoints_dir, tag=tag)
         log_info("Saved checkpoint after %d step", self.step)
 
     def _load_checkpoint(self):
@@ -185,12 +209,17 @@ class MelSpecVQVAESupervisor:
             log_info("No checkpoint specified, nothing loaded")
             return
 
-        checkpoint = torch.load(self.hparams.base_checkpoint)
+        self.step = self.hparams.base_checkpoint
         log_info("Loading checkpoint from %d step", self.step)
 
-        self.model.load_state_dict(checkpoint["model_state_dict"])
-        self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
-        self.step = checkpoint["step"]
+        for label, engine in self.engines.items():
+            tag = f'{label}_{self.step}'
+            engine.load_checkpoint(
+                self.hparams.checkpoints_dir,
+                tag=tag,
+                load_module_strict=False,
+                load_module_only=False,
+            )
         self.step += 1
 
     def _make_infinite_epochs(self, dl: DataLoader):
@@ -212,6 +241,12 @@ if __name__ == "__main__":
     hparams = MelSpecVQVAEHParams()
     mel_spec_vae = MelSpecVQVAE(hparams)
     summary(mel_spec_vae)
-    cpu_device = torch.device("cpu")
-    vae_supervisor = MelSpecVQVAESupervisor(mel_spec_vae, cpu_device, hparams)
+    torch.distributed.init_process_group(
+        backend='nccl',
+        init_method=f'tcp://{os.getenv("MASTER_ADDR")}:{os.getenv("MASTER_PORT")}',
+        world_size=get_world_size(),
+        rank=global_rank()
+
+    )
+    vae_supervisor = MelSpecVQVAESupervisor(mel_spec_vae, torch.device('cuda'), hparams)
     vae_supervisor.train()

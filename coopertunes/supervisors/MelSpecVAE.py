@@ -10,7 +10,6 @@ from torch.utils.data import DataLoader
 from coopertunes.datasets import MelDataset
 from coopertunes.distributed import (
     get_world_size,
-    global_leader_only,
     global_rank,
     is_global_leader
 )
