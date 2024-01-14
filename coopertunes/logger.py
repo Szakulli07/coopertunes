@@ -6,8 +6,8 @@ from typing import Any, Literal
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from .hparams import HParams
-from .utils import convert_mels2audios_h, log_info, plot_audio, plot_mel
+from coopertunes.hparams import HParams
+from coopertunes.utils import convert_mels2audios_h, log_info, plot_audio, plot_mel
 
 
 class Logger:
@@ -42,8 +42,38 @@ class Logger:
     def _init_utils_fn(self):
         log_fn_dict = {
             'melspecvae': (self._log_step_vae, self._log_mel_batch),
+            'melspecvqvae': (self._log_step_vqvae, self._log_mel_batch),
+            'melgan': (self._log_step_melgan, self._log_audio_melgan)
         }
         return log_fn_dict[self.model_name]
+
+    def _log_audio_melgan(
+        self,
+        tag: str,
+        audio: torch.Tensor,
+        global_step: int,
+        sample_rate: int
+    ):
+        self._logger.add_audio(
+            tag, audio, global_step, sample_rate=sample_rate
+        )
+
+    def _log_step_melgan(
+        self,
+        epoch: int,
+        step: int,
+        prefix: Literal['training', 'validation'] = 'training',
+    ):
+        log_info(
+            'Epoch: %d | Step: %d |\
+                LossDiscriminator: %.4f | LossGenerator: %.4f |\
+                StepTime: %.2f[s]',
+            epoch,
+            step,
+            mean(self._running_vals[f'{prefix}/discriminator']),
+            mean(self._running_vals[f'{prefix}/generator']),
+            mean(self._running_vals[f'{prefix}/step_time']),
+        )
 
     def _log_step_vae(
         self,
@@ -57,6 +87,21 @@ class Logger:
             step,
             mean(self._running_vals[f'{prefix}/recon']),
             mean(self._running_vals[f'{prefix}/kld']),
+            mean(self._running_vals[f'{prefix}/step_time']),
+        )
+
+    def _log_step_vqvae(
+        self,
+        epoch: int,
+        step: int,
+        prefix: Literal['training', 'validation'] = 'training',
+    ):
+        log_info(
+            'Epoch: %d | Step: %d | LossRecon: %.4f | LossVQ: %.4f | StepTime: %.2f[s]',
+            epoch,
+            step,
+            mean(self._running_vals[f'{prefix}/recon']),
+            mean(self._running_vals[f'{prefix}/vq']),
             mean(self._running_vals[f'{prefix}/step_time']),
         )
 
@@ -89,3 +134,6 @@ class Logger:
         batch = [audio.to(self.device) for audio in batch]
         for audio_index, audio in enumerate(batch):
             self._log_mel(audio, audio_type, audio_index, step)
+
+    def get_summary_writer(self):
+        return self._logger
