@@ -1,5 +1,5 @@
 from coopertunes.models.MelSpecVAE import MelSpecVAE
-from coopertunes.models.MelSpecVQVAE import MelSpecVQVAEHParams
+from coopertunes.models.MelSpecVQVAE import MelSpecVQVAE
 from coopertunes.models.MelGan import MelGanGenerator, MelGanDiscriminator
 from coopertunes.models.Audio2Mel import Audio2Mel
 from coopertunes.models.model import Model
