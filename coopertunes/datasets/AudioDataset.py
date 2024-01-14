@@ -1,13 +1,13 @@
+import random
+
 import torch
 import torch.utils.data
 import torch.nn.functional as F
 
-from librosa.core import load
-from librosa.util import normalize
+from librosa.core import load  # pylint: disable=no-name-in-module
+from librosa.util import normalize  # pylint: disable=no-name-in-module
 
-from pathlib import Path
 import numpy as np
-import random
 
 
 def files_to_list(filename):
@@ -35,7 +35,7 @@ class AudioDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         filename = self.audio_files[index]
-        audio, sampling_rate = self.load_wav_to_torch(filename)
+        audio, _ = self.load_wav_to_torch(filename)
         if audio.size(0) >= self.segment_length:
             max_audio_start = audio.size(0) - self.segment_length
             audio_start = random.randint(0, max_audio_start)

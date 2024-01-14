@@ -5,7 +5,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from ..hparams import MelSpecVQVAEHParams
+from coopertunes.hparams import MelSpecVQVAEHParams
 
 
 class VectorQuantizer(nn.Module):

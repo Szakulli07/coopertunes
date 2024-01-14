@@ -1,11 +1,8 @@
 import torch.nn as nn
-import torch.nn.functional as F
-import torch
-from librosa.filters import mel as librosa_mel_fn
 from torch.nn.utils import weight_norm
 import numpy as np
 
-from coopertunes.hparams import HParams
+from coopertunes.hparams import MelGanHParams
 
 
 def weights_init(m):
@@ -46,7 +43,7 @@ class MelGanGenerator(nn.Module):
     Generating raw audio from mel spectrogram with GAN generator.
     """
 
-    def __init__(self, hparams: HParams):
+    def __init__(self, hparams: MelGanHParams):
         super().__init__()
         ratios = hparams.generator_ratios
         self.hop_length = np.prod(ratios)
@@ -59,7 +56,7 @@ class MelGanGenerator(nn.Module):
         ]
 
         # Upsample to raw audio scale
-        for i, r in enumerate(ratios):
+        for r in ratios:
             model += [
                 nn.LeakyReLU(0.2),
                 WNConvTranspose1d(
@@ -96,7 +93,7 @@ class MelGanGenerator(nn.Module):
 
 
 class MelGanNLayerDiscriminator(nn.Module):
-    def __init__(self, hparams: HParams):
+    def __init__(self, hparams: MelGanHParams):
         super().__init__()
         model = nn.ModuleDict()
 
@@ -112,7 +109,7 @@ class MelGanNLayerDiscriminator(nn.Module):
             nf_prev = nf
             nf = min(nf * stride, 1024)
 
-            model["layer_%d" % n] = nn.Sequential(
+            model[f"layer_{n}"] = nn.Sequential(
                 WNConv1d(
                     nf_prev,
                     nf,
@@ -125,12 +122,12 @@ class MelGanNLayerDiscriminator(nn.Module):
             )
 
         nf = min(nf * 2, 1024)
-        model["layer_%d" % (hparams.n_layers_D + 1)] = nn.Sequential(
+        model[f"layer_{hparams.n_layers_D + 1}"] = nn.Sequential(
             WNConv1d(nf_prev, nf, kernel_size=5, stride=1, padding=2),
             nn.LeakyReLU(0.2, True),
         )
 
-        model["layer_%d" % (hparams.n_layers_D + 2)] = WNConv1d(
+        model[f"layer_{hparams.n_layers_D + 2}"] = WNConv1d(
             nf, 1, kernel_size=3, stride=1, padding=1
         )
 
@@ -138,14 +135,14 @@ class MelGanNLayerDiscriminator(nn.Module):
 
     def forward(self, x):
         results = []
-        for key, layer in self.model.items():
+        for _, layer in self.model.items():
             x = layer(x)
             results.append(x)
         return results
 
 
 class MelGanDiscriminator(nn.Module):
-    def __init__(self, hparams: HParams):
+    def __init__(self, hparams: MelGanHParams):
         super().__init__()
         self.model = nn.ModuleDict()
         for i in range(hparams.num_D):
@@ -157,7 +154,7 @@ class MelGanDiscriminator(nn.Module):
 
     def forward(self, x):
         results = []
-        for key, disc in self.model.items():
+        for _, disc in self.model.items():
             results.append(disc(x))
             x = self.downsample(x)
         return results

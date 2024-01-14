@@ -109,10 +109,7 @@ def convert_audios2mels_h(audios, hparams):
 
 
 def get_default_device():
-    if torch.cuda.is_available():
-        return "cuda"
-    else:
-        return "cpu"
+    return "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def convert_mels2audios(

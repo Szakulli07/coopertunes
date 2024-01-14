@@ -23,10 +23,10 @@ class MelSpecVAESupervisor:
     """Supervisor for MelSpecVAESupervisor
     After init you can launch training with `train` method"""
 
-    def __init__(self, model: MelSpecVAE, device: torch.device, hparmas: MelSpecVAEHParams):
+    def __init__(self, model: MelSpecVAE, device: torch.device, hparams: MelSpecVAEHParams):
         self.model = model
         self.device = device
-        self.hparams = hparmas
+        self.hparams = hparams
 
         self.epoch = 1
         self.step = 1
@@ -69,7 +69,7 @@ class MelSpecVAESupervisor:
             start = time.time()
 
             self.engines['model'].zero_grad()
-            for _ in range(hparams.grad_accumulation_steps):
+            for _ in range(self.hparams.grad_accumulation_steps):
                 batch = next(train_dl_iter)
                 mels = batch["mels"].to(self.device)
 
@@ -78,7 +78,7 @@ class MelSpecVAESupervisor:
                 self.engines['model'].backward(loss['loss'])
 
             grad_norm = torch.nn.utils.clip_grad_norm_(
-                self.engines['model'].parameters(), hparams.grad_clip_thresh
+                self.engines['model'].parameters(), self.hparams.grad_clip_thresh
             )
 
             self.engines['model'].step()
@@ -238,8 +238,8 @@ class MelSpecVAESupervisor:
 if __name__ == "__main__":
     from torchsummary import summary
 
-    hparams = MelSpecVAEHParams()
-    mel_spec_vae = MelSpecVAE(hparams)
+    mel_hparams = MelSpecVAEHParams()
+    mel_spec_vae = MelSpecVAE(mel_hparams)
     summary(mel_spec_vae)
     torch.distributed.init_process_group(
         backend='nccl',
@@ -248,5 +248,5 @@ if __name__ == "__main__":
         rank=global_rank()
 
     )
-    vae_supervisor = MelSpecVAESupervisor(mel_spec_vae, torch.device('cuda'), hparams)
+    vae_supervisor = MelSpecVAESupervisor(mel_spec_vae, torch.device('cuda'), mel_hparams)
     vae_supervisor.train()
