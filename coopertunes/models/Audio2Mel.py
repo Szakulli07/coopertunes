@@ -3,16 +3,19 @@ import torch.nn.functional as F
 import torch
 from librosa.filters import mel as librosa_mel_fn
 
-from coopertunes.hparams import HParams
+from coopertunes.hparams import Audio2MelHParams
 
 
 class Audio2Mel(nn.Module):
-    def __init__(self, hparams: HParams):
+    def __init__(self, hparams: Audio2MelHParams):
         super().__init__()
         window = torch.hann_window(hparams.win_length).float()
         mel_basis = librosa_mel_fn(
-            hparams.sampling_rate, hparams.n_fft,
-            hparams.n_mel_channels, hparams.mel_fmin, hparams.mel_fmax
+            sr=hparams.sampling_rate,
+            n_fft=hparams.n_fft,
+            n_mels=hparams.n_mel_channels,
+            fmin=hparams.mel_fmin,
+            fmax=hparams.mel_fmax
         )
         mel_basis = torch.from_numpy(mel_basis).float()
         self.register_buffer("mel_basis", mel_basis)

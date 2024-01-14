@@ -43,15 +43,35 @@ class Logger:
         log_fn_dict = {
             'melspecvae': (self._log_step_vae, self._log_mel_batch),
             'melspecvqvae': (self._log_step_vqvae, self._log_mel_batch),
-            'melgan': (self._log_step_placeholder, self._log_audio_placeholder)
+            'melgan': (self._log_step_melgan, self._log_audio_melgan)
         }
         return log_fn_dict[self.model_name]
 
-    def _log_step_placeholder():
-        pass
+    def _log_audio_melgan(
+            self,
+            tag: str,
+            audio: torch.Tensor,
+            global_step:int,
+            sample_rate: int
+        ):
+        self._logger.add_audio(
+            tag, audio, global_step, sample_rate=sample_rate
+        )
 
-    def _log_audio_placeholder():
-        pass
+    def _log_step_melgan(
+        self,
+        epoch: int,
+        step: int,
+        prefix: Literal['training', 'validation'] = 'training',
+    ):
+        log_info(
+            'Epoch: %d | Step: %d | LossDiscriminator: %.4f | LossGenerator: %.4f | StepTime: %.2f[s]',
+            epoch,
+            step,
+            mean(self._running_vals[f'{prefix}/discriminator']),
+            mean(self._running_vals[f'{prefix}/generator']),
+            mean(self._running_vals[f'{prefix}/step_time']),
+        )
 
     def _log_step_vae(
         self,

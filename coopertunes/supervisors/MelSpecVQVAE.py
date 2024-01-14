@@ -7,16 +7,16 @@ import torch
 from einops import rearrange
 from torch.utils.data import DataLoader
 
-from ..datasets import MelDataset
+from coopertunes.datasets import MelDataset
 from coopertunes.distributed import (
     get_world_size,
     global_rank,
     is_global_leader
 )
-from ..hparams import MelSpecVQVAEHParams
-from ..logger import Logger
-from ..models import MelSpecVQVAE
-from ..utils import log_info
+from coopertunes.hparams import MelSpecVQVAEHParams
+from coopertunes.logger import Logger
+from coopertunes.models import MelSpecVQVAE
+from coopertunes.utils import log_info
 
 
 class MelSpecVQVAESupervisor:
