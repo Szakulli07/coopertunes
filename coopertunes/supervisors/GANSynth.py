@@ -2,10 +2,11 @@ from typing import Tuple
 
 import torch
 from torch import nn
-from torch.optim import Adam
 from torch.nn import functional as F
+from torch.optim import Adam
 
 from coopertunes.hparams.GANSynth import GANSynthHParams
+from coopertunes.logger import Logger
 from coopertunes.models.GANSynth import Discriminator, Generator
 
 
@@ -23,6 +24,8 @@ class GANSynthSupervisor:
         # TODO: real data
         self.train_loader = None
 
+        self._logger = Logger("gansynth", self.hparams, device)
+
     def train(self):
         self.generator.to(self.device)
         self.discriminator.to(self.device)
@@ -32,14 +35,17 @@ class GANSynthSupervisor:
         source_criterion = nn.BCEWithLogitsLoss()
         pitch_criterion = nn.CrossEntropyLoss()
 
+        self.epoch = 0
+        self.step = 0
         for epoch in range(self.hparams.epochs):
+            self.epoch = epoch
             for data in self.train_loader:
                 self.discriminator_optimizer.zero_grad()
                 real_images = data[0].to(self.device)
                 real_pitch = data[1].to(self.device)
                 batch_size = real_images.size(0)
                 label = torch.ones((batch_size,), dtype=torch.float, device=self.device)
-                (discriminator_output, discriminator_pitch) = self.discriminator(real_images)                       # .view(-1)
+                (discriminator_output, discriminator_pitch) = self.discriminator(real_images)
                 error_discriminator_real = source_criterion(discriminator_output.view(-1), label) + pitch_criterion(discriminator_pitch, real_pitch)
                 error_discriminator_real.backward()
 
@@ -59,6 +65,22 @@ class GANSynthSupervisor:
                 error_generator = source_criterion(discriminator_output.view(-1), label) + pitch_criterion(discriminator_pitch, fake_pitch)
                 error_generator.backward()
                 self.generator_optimizer.step()
+
+                stats = {
+                    "generator_loss": error_generator.item(),
+                    "discriminator_loss": error_discriminator.item(),
+                    "discriminator_real_loss": error_discriminator_real.item(),
+                    "discriminator_fake_loss": error_discriminator_fake.item(),
+                }
+                self._log_train_stats(stats)
+                self.step += 1
+
+    def _log_train_stats(self, stats):
+        self._logger.update_running_vals(stats, 'training')
+        self._logger.log_step(self.epoch, self.step, prefix='training')
+
+        if self.step and self.step % self.hparams.steps_per_log == 0:
+            self._logger.log_running_vals_to_tb(self.step)
 
 
 if __name__ == "__main__":

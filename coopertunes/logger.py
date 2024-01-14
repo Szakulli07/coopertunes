@@ -43,7 +43,8 @@ class Logger:
         log_fn_dict = {
             'melspecvae': (self._log_step_vae, self._log_mel_batch),
             'melspecvqvae': (self._log_step_vqvae, self._log_mel_batch),
-            'melgan': (self._log_step_melgan, self._log_audio_melgan)
+            'melgan': (self._log_step_melgan, self._log_audio_melgan),
+            "gansynth": (self._log_step_gan_synth, None)
         }
         return log_fn_dict[self.model_name]
 
@@ -137,3 +138,17 @@ class Logger:
 
     def get_summary_writer(self):
         return self._logger
+    
+    def _log_step_gan_synth(
+        self,
+        epoch: int,
+        step: int,
+        prefix: Literal['training', 'validation'] = 'training',
+    ):
+        log_info(
+            'Epoch: %d | Step: %d | GeneratorLoss: %.4f | DiscriminatorLoss: %.4f',
+            epoch,
+            step,
+            mean(self._running_vals[f'{prefix}/generator_loss']),
+            mean(self._running_vals[f'{prefix}/discriminator_loss']),
+        )
