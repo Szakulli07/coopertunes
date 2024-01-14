@@ -13,7 +13,11 @@ from coopertunes.datasets import AudioDataset
 from coopertunes.hparams import MelGanHParams, Audio2MelHParams
 from coopertunes.logger import Logger
 from coopertunes.models import MelGanGenerator, MelGanDiscriminator, Audio2Mel
-from coopertunes.utils import save_sample, get_default_device
+from coopertunes.utils import (
+    save_sample,
+    get_default_device,
+    log_info
+)
 
 class MelGanSupervisor:
     """Supervisor for MelGAN
@@ -21,36 +25,54 @@ class MelGanSupervisor:
     You can test trained checkpoints with `test` method on given raw audio
     """
 
-    def __init__(self, 
-                 generator: MelGanGenerator, 
-                 discriminator: MelGanDiscriminator,
-                 device: torch.device, 
-                 hparams: MelGanHParams):
+    def __init__(
+        self,
+        generator: MelGanGenerator,
+        discriminator: MelGanDiscriminator,
+        audio2mel: Audio2Mel,
+        device: torch.device,
+        hparams: MelGanHParams,
+    ):
         self.device = device
-        self.fft = Audio2Mel(Audio2MelHParams()).to(device)
-        self.netG = generator.to(device)
-        self.netD = discriminator.to(device)
+
+        self.netG = generator
+        self.netD = discriminator
+        self.audio2mel = audio2mel
+
         self.hparams = hparams
 
+        self.epoch = 1
+        self.step = 1
+
         self._logger = Logger("melgan", self.hparams, device)
-        self.writer = self._logger.get_summary_writer()
+
+        self.train_dl, self.val_dl = self._build_loaders()
 
         self.optG = torch.optim.Adam(
             self.netG.parameters(), lr=hparams.learning_rate, betas=hparams.adam_betas)
         self.optD = torch.optim.Adam(
             self.netD.parameters(), lr=hparams.learning_rate, betas=hparams.adam_betas)
 
+
+        self.writer = self._logger.get_summary_writer()
+
+        if self.hparams.base_checkpoint:
+            self._load_checkpoint()
+        else:
+            log_info("Initilizing fresh training")
+
+
     def train(self):
         root = Path(self.hparams.summary_path)
         root.mkdir(parents=True, exist_ok=True)
 
         train_loader, test_loader = self._create_dataloaders()
-        
+
         test_voc = []
         test_audio = []
         for i, x_t in enumerate(test_loader):
             x_t = x_t.cuda()
-            s_t = self.fft(x_t).detach()
+            s_t = self.audio2mel(x_t).detach()
 
             test_voc.append(s_t.cuda())
             test_audio.append(x_t)
@@ -72,11 +94,11 @@ class MelGanSupervisor:
         for epoch in range(1, self.hparams.epochs + 1):
             for iterno, x_t in enumerate(train_loader):
                 x_t = x_t.cuda()
-                s_t = self.fft(x_t).detach()
+                s_t = self.audio2mel(x_t).detach()
                 x_pred_t = self.netG(s_t.cuda())
 
                 with torch.no_grad():
-                    s_pred_t = self.fft(x_pred_t.detach())
+                    s_pred_t = self.audio2mel(x_pred_t.detach())
                     s_error = F.l1_loss(s_t, s_pred_t).item()
 
                 D_fake_det = self.netD(x_pred_t.cuda().detach())
@@ -134,7 +156,7 @@ class MelGanSupervisor:
                     )
                     costs = []
                     start = time.time()
-        
+
     def _eval(self, root, test_voc, test_audio, epoch, costs):
         best_mel_reconst = 1000000
         with torch.no_grad():
@@ -149,26 +171,53 @@ class MelGanSupervisor:
                     sample_rate=22050,
                 )
 
-        torch.save(self.netG.state_dict(), root / "netG.pt")
-        torch.save(self.optG.state_dict(), root / "optG.pt")
-
-        torch.save(self.netD.state_dict(), root / "netD.pt")
-        torch.save(self.optD.state_dict(), root / "optD.pt")
-
-        if np.asarray(costs).mean(0)[-1] < best_mel_reconst:
+        if new_best := np.asarray(costs).mean(0)[-1] < best_mel_reconst:
             best_mel_reconst = np.asarray(costs).mean(0)[-1]
-            torch.save(self.netD.state_dict(), root / "best_netD.pt")
-            torch.save(self.netG.state_dict(), root / "best_netG.pt")
+
+        self._save_checkpoint(best = new_best)
 
 
-    def load_checkpoint(self,checkpoint_path: str=None):
-        """
-        Loads chackpoint given as argument. 
-        If there is no arguments, it will load default checkpoint given in hparams.
-        """
-        checkpoint_path = self.hparams.default_checkpoint if checkpoint_path is None else Path(checkpoint_path)   
-        self.netG.load_state_dict(torch.load(checkpoint_path, map_location=self.device))
+    def _save_checkpoint(self, best: bool = False):
+        self.hparams.checkpoints_dir.mkdir(parents=True, exist_ok=True)
 
+        checkpoint_state = {
+            "step": self.step,
+            "epoch": self.epoch,
+            "netG": self.netG.state_dict(),
+            "optG": self.optG.state_dict(),
+            "netD": self.netD.state_dict(),
+            "optD": self.optD.state_dict(),
+            "model_state_dict": self.model.state_dict(),
+            "optimizer_state_dict": self.optimizer.state_dict()
+        }
+        torch.save(
+            checkpoint_state,
+            (self.hparams.checkpoints_dir/str(self.step)).with_suffix(".pt")
+        )
+
+        if best:
+            torch.save(
+                checkpoint_state,
+                (self.hparams.checkpoints_dir/'best').with_suffix(".pt")
+            )
+        log_info("Saved checkpoint after %d step", self.step)
+
+
+    def _load_checkpoint(self):
+        if not self.hparams.base_checkpoint:
+            log_info("No checkpoint specified, nothing loaded")
+            return
+
+        checkpoint = torch.load(self.hparams.base_checkpoint)
+        log_info("Loading checkpoint from %d step", checkpoint["step"])
+
+        self.netG.load_state_dict(checkpoint["netG"])
+        self.optG.load_state_dict(checkpoint["optG"])
+        self.netD.load_state_dict(checkpoint["netD"])
+        self.optD.load_state_dict(checkpoint["optD"])
+        self.step = checkpoint["step"]
+        self.step += 1
+        self.epoch = checkpoint["epoch"]
 
     def test(self, audio_path: str, output_path: str = "melgan_result.wav"):
         """
@@ -177,7 +226,7 @@ class MelGanSupervisor:
         """
         audio, sr = librosa.core.load(audio_path)
         audio = torch.from_numpy(audio)[None]
-        spec = self.fft(audio.unsqueeze(1).to(self.device))
+        spec = self.audio2mel(audio.unsqueeze(1).to(self.device))
         reconstructed = self.netG(spec.to(self.device)).squeeze((0,1)).detach().cpu().numpy()
         sf.write(output_path, reconstructed, sr)
 
@@ -190,31 +239,74 @@ class MelGanSupervisor:
         return self.netG(spectrogram.to(self.device)).squeeze(1)
 
 
-    def _create_dataloaders(self):
-        train_set = AudioDataset(
-        os.path.join(self.hparams.processed_data_dir, "train_files.txt"), self.hparams.seq_len, sampling_rate=self.hparams.sampling_rate
-        )
-        test_set = AudioDataset(
-            os.path.join(self.hparams.processed_data_dir, "test_files.txt"),
-            self.hparams.sampling_rate * 4,
-            sampling_rate=self.hparams.sampling_rate,
-            augment=False,
-        )
-        train_loader = DataLoader(train_set, batch_size=self.hparams.batch_size, num_workers=0)
-        test_loader = DataLoader(test_set, batch_size=1)
-        return train_loader, test_loader
+    def _build_loaders(self) -> tuple[DataLoader, DataLoader | None]:
+        train_dataset = self._build_dataset(training=True)
+        train_dl = self._create_dataloader(train_dataset, training=True)
+
+        val_dataset = self._build_dataset(training=False)
+        val_dl = self._create_dataloader(val_dataset, training=False)
+
+        return train_dl, val_dl
+
+    def _create_dataloader(
+        self, dataset: AudioDataset, training: bool
+    ) -> DataLoader:
+        dataloader: DataLoader
+        if training:
+            dataloader = DataLoader(
+                dataset=dataset,
+                batch_size=self.hparams.batch_size,
+                num_workers=0
+            )
+        else:
+            dataloader = DataLoader(
+                dataset=dataset,
+                batch_size=1
+            )
+        return dataloader
+
+    def _build_dataset(self, training: bool) -> AudioDataset:
+        dataset: AudioDataset
+        if training:
+            dataset = AudioDataset(
+                training_files=Path(self.hparams.processed_data_dir/"train_files.txt"),
+                segment_length=self.hparams.seq_len,
+                sampling_rate=self.hparams.sampling_rate
+            )
+        else:
+            dataset = AudioDataset(
+                training_files=Path(self.hparams.processed_data_dir/"test_files.txt"),
+                segment_length=self.hparams.sampling_rate * 4,
+                sampling_rate=self.hparams.sampling_rate,
+                augment=False,
+            )
+        return dataset
+
+    def _make_infinite_epochs(self, dl: DataLoader):
+        while True:
+            yield from dl
+            self.epoch += 1
+
+    def _log_train_stats(self, stats):
+        self._logger.update_running_vals(stats, 'training')
+        self._logger.log_step(self.epoch, self.step, prefix='training')
+
+        if self.step and self.step % self.hparams.steps_per_log == 0:
+            self._logger.log_running_vals_to_tb(self.step)
 
 if __name__ == "__main__":
-    TRAIN = False
-    TEST = True
     hparams = MelGanHParams()
+    audio2mel_hparams = Audio2MelHParams()
+
+    audio2mel = Audio2Mel(audio2mel_hparams)
     generator = MelGanGenerator(hparams)
     discriminator = MelGanDiscriminator(hparams)
-    supervisor = MelGanSupervisor(generator, discriminator, get_default_device(), hparams)
 
-    if TRAIN:
-        supervisor.train()
-
-    if TEST:
-        supervisor.load_checkpoint()
-        supervisor.test("input.wav")
+    supervisor = MelGanSupervisor(
+        generator,
+        discriminator,
+        audio2mel,
+        get_default_device(),
+        hparams
+    )
+    supervisor.train()
