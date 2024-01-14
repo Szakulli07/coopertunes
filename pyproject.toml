@@ -14,6 +14,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
   "coloredlogs>=15.0.1",
+  "deepspeed==0.12.5",
   "einops==0.7.0",
   "pycodestyle==2.10.0",
   "pylint==2.16.2",
@@ -24,9 +25,7 @@ dependencies = [
   "librosa==0.9.1",
   "scipy==1.11.4",
   "argparse==1.4.0",
-  "torch-summary==1.4.5",
-  "autopep-8==2.0.4",
-  "black==23.12.1"]
+  "torch-summary==1.4.5"]
 
 [project.urls]
 "Homepage" = "https://github.com/Szakulli07/coopertunes"

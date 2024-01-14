@@ -41,4 +41,29 @@ class MelSpecVQVAEHParams(HParams):
         self.grad_accumulation_steps: int = 1
         self.grad_clip_thresh: float = 0.2
 
+        self.use_fp16: bool = False
+        self.use_bf16: bool = False
+        self.use_amp: bool = False
+
         self.update(hparams)
+
+    @property
+    def ds_cfg(self):
+        return {
+            'train_micro_batch_size_per_gpu': self.batch_size,
+            'gradient_accumulation_steps': self.grad_accumulation_steps,
+            'optimizer': {
+                'type': 'AdamW',
+                'lr': self.lr,
+                'betas': self.betas,
+            },
+            'scheduler': {
+                'type': 'ExponentialLR',
+                'params': {
+                    'gamma': self.lr_decay,
+                },
+            },
+            'fp16': {'enabled': self.use_fp16},
+            'bf16': {'enabled': self.use_bf16},
+            'amp': {'enabled': self.use_amp},
+        }
