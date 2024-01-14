@@ -225,7 +225,6 @@ class MelSpecVAESupervisor:
         while True:
             yield from dl
             self.epoch += 1
-            self.scheduler.step()
 
     def _log_train_stats(self, stats):
         self._logger.update_running_vals(stats, 'training')
