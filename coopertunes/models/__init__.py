@@ -9,7 +9,8 @@ def get_model(model_name):
     models_dict = {
         "MelSpecVAE": MelSpecVAE,
         "MelSpecVQVAE": MelSpecVQVAE,
-        "MelGan": (MelGanGenerator, MelGanDiscriminator),
+        "MelGanGenerator": MelGanGenerator, 
+        "MelGanDiscriminator": MelGanDiscriminator,
         "Audio2Mel": Audio2Mel
     }
     return models_dict[model_name]
@@ -19,6 +20,7 @@ __all__ = [
     "Model",
     "MelSpecVAE",
     "MelSpecVQVAE"
-    "MelGan",
+    "MelGanGenerator",
+    "MelGanDiscriminator",
     "Audio2Mel"
 ]

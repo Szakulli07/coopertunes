@@ -23,10 +23,10 @@ class MelSpecVAESupervisor:
     """Supervisor for MelSpecVAESupervisor
     After init you can launch training with `train` method"""
 
-    def __init__(self, model: MelSpecVAE, device: torch.device, hparmas: MelSpecVAEHParams):
+    def __init__(self, model: MelSpecVAE, device: torch.device, hparams: MelSpecVAEHParams):
         self.model = model
         self.device = device
-        self.hparams = hparmas
+        self.hparams = hparams
 
         self.epoch = 1
         self.step = 1

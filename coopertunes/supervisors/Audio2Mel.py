@@ -11,10 +11,9 @@ class Audio2MelSupervisor:
 
     def convert(self, audio):
         """
-        Performs audio to mel conversion (See Audio2Mel in mel2wav/modules.py)
         Args:
             audio (torch.tensor): PyTorch tensor containing audio (batch_size, timesteps)
         Returns:
-            torch.tensor: log-mel-spectrogram computed on input audio (batch_size, 80, timesteps)
+            torch.tensor: log-mel-spectrogram computed on input audio (batch_size, mel bank filters, timesteps)
         """
         return self.model(audio.unsqueeze(1).to(self.device))
