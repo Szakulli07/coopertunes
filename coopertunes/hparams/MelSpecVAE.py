@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any, Optional, Union
 
-from coopertunes.hparams import HParams
+from .hparams import HParams
 
 
 class MelSpecVAEHParams(HParams):

@@ -17,8 +17,8 @@ class Audio2Mel(nn.Module):
             fmin=hparams.mel_fmin,
             fmax=hparams.mel_fmax
         )
-        mel_basis = torch.from_numpy(mel_basis).float()
-        self.register_buffer("mel_basis", mel_basis)
+        mel_tensor = torch.from_numpy(mel_basis).float()
+        self.register_buffer("mel_basis", mel_tensor)
         self.register_buffer("window", window)
         self.n_fft = hparams.n_fft
         self.hop_length = hparams.hop_length

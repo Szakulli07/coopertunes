@@ -48,12 +48,12 @@ class Logger:
         return log_fn_dict[self.model_name]
 
     def _log_audio_melgan(
-            self,
-            tag: str,
-            audio: torch.Tensor,
-            global_step:int,
-            sample_rate: int
-        ):
+        self,
+        tag: str,
+        audio: torch.Tensor,
+        global_step: int,
+        sample_rate: int
+    ):
         self._logger.add_audio(
             tag, audio, global_step, sample_rate=sample_rate
         )
@@ -65,7 +65,9 @@ class Logger:
         prefix: Literal['training', 'validation'] = 'training',
     ):
         log_info(
-            'Epoch: %d | Step: %d | LossDiscriminator: %.4f | LossGenerator: %.4f | StepTime: %.2f[s]',
+            'Epoch: %d | Step: %d |\
+                LossDiscriminator: %.4f | LossGenerator: %.4f |\
+                StepTime: %.2f[s]',
             epoch,
             step,
             mean(self._running_vals[f'{prefix}/discriminator']),

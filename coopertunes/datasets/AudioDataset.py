@@ -4,8 +4,8 @@ import torch
 import torch.utils.data
 import torch.nn.functional as F
 
-from librosa.core import load
-from librosa.util import normalize
+from librosa.core import load  # pylint: disable=no-name-in-module
+from librosa.util import normalize  # pylint: disable=no-name-in-module
 
 import numpy as np
 

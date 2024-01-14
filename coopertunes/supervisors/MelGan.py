@@ -133,7 +133,6 @@ class MelGanSupervisor:
                     self.netD.train()
                 self.step += 1
 
-
     @torch.inference_mode()
     def eval(self, mel_recon):
         best_mel_reconst = 1000000
@@ -142,9 +141,13 @@ class MelGanSupervisor:
             s_t = self.audio2mel(x_t).detach()
             pred_audio = self.netG(s_t.to(self.device))
             pred_audio = pred_audio.squeeze().cpu()
-            save_sample(self.hparams.logs_dir / ("generated_%d.wav" % i), hparams.sampling_rate, pred_audio)
+            save_sample(
+                self.hparams.logs_dir / (f"generated_{i}.wav"),
+                self.hparams.sampling_rate,
+                pred_audio
+            )
             self._logger.log_audio(
-                "generated/sample_%d.wav" % i,
+                f"generated/sample_{i}.wav",
                 pred_audio,
                 self.epoch,
                 sample_rate=22050,
@@ -200,8 +203,8 @@ class MelGanSupervisor:
         Audio will be converted to Mel Spectrogram, then back to raw audio, and saved.
         """
         audio, sr = librosa.core.load(audio_path)
-        audio = torch.from_numpy(audio)[None]
-        spec = self.audio2mel(audio.unsqueeze(1).to(self.device))
+        audio_tensor = torch.from_numpy(audio)[None]
+        spec = self.audio2mel(audio_tensor.unsqueeze(1).to(self.device))
         reconstructed = self.netG(spec.to(self.device)).squeeze((0, 1)).detach().cpu().numpy()
         sf.write(output_path, reconstructed, sr)
 
@@ -210,7 +213,9 @@ class MelGanSupervisor:
         Converts spectrogram to raw audio.
         spectrogram's shape is [1, bins, len]
         """
-        return self.netG(spectrogram.to(self.device)).squeeze(1)
+        return self.netG(
+            torch.from_numpy(spectrogram).float().to(self.device)
+        ).squeeze(1)
 
     def _build_loaders(self) -> tuple[DataLoader, DataLoader | None]:
         train_dataset = self._build_dataset(training=True)
@@ -229,9 +234,13 @@ class MelGanSupervisor:
             test_audio.append(x_t)
 
             audio = x_t.squeeze().cpu()
-            save_sample(self.hparams.logs_dir / ("original_%d.wav" % i), self.hparams.sampling_rate, audio)
+            save_sample(
+                self.hparams.logs_dir / f"original_{i}.wav",
+                self.hparams.sampling_rate,
+                audio
+            )
             self._logger.log_audio(
-                "original/sample_%d.wav" % i, audio, 0, sample_rate=self.hparams.sampling_rate)
+                f"original/sample_{i}.wav", audio, 0, sample_rate=self.hparams.sampling_rate)
 
             if i == self.hparams.n_test_samples - 1:
                 break
@@ -286,18 +295,18 @@ class MelGanSupervisor:
 
 
 if __name__ == "__main__":
-    hparams = MelGanHParams()
+    mel_hparams = MelGanHParams()
     audio2mel_hparams = Audio2MelHParams()
 
     melGanAudio2mel = Audio2Mel(audio2mel_hparams)
-    melGanGgenerator = MelGanGenerator(hparams)
-    melGanDiscriminator = MelGanDiscriminator(hparams)
+    melGanGgenerator = MelGanGenerator(mel_hparams)
+    melGanDiscriminator = MelGanDiscriminator(mel_hparams)
 
     supervisor = MelGanSupervisor(
         melGanGgenerator,
         melGanDiscriminator,
         melGanAudio2mel,
         get_default_device(),
-        hparams
+        mel_hparams
     )
     supervisor.train()

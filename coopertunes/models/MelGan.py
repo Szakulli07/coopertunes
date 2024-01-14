@@ -109,7 +109,7 @@ class MelGanNLayerDiscriminator(nn.Module):
             nf_prev = nf
             nf = min(nf * stride, 1024)
 
-            model["layer_%d" % n] = nn.Sequential(
+            model[f"layer_{n}"] = nn.Sequential(
                 WNConv1d(
                     nf_prev,
                     nf,
@@ -122,12 +122,12 @@ class MelGanNLayerDiscriminator(nn.Module):
             )
 
         nf = min(nf * 2, 1024)
-        model["layer_%d" % (hparams.n_layers_D + 1)] = nn.Sequential(
+        model[f"layer_{hparams.n_layers_D + 1}"] = nn.Sequential(
             WNConv1d(nf_prev, nf, kernel_size=5, stride=1, padding=2),
             nn.LeakyReLU(0.2, True),
         )
 
-        model["layer_%d" % (hparams.n_layers_D + 2)] = WNConv1d(
+        model[f"layer_{hparams.n_layers_D + 2}"] = WNConv1d(
             nf, 1, kernel_size=3, stride=1, padding=1
         )
 
