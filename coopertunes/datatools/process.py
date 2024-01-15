@@ -1,15 +1,15 @@
 import os
-import re
 import sys
-import torch
 import hashlib
-from progress.bar import Bar
 from concurrent.futures import ProcessPoolExecutor
+
+import torch
+from progress.bar import Bar
 
 from coopertunes.datatools.miditools import NoteSeq, EventSeq, ControlSeq
 from coopertunes.utils import find_files_by_extensions
-from coopertunes.datatools.config import DataType, DATA_NAMES
 
+# pylint: disable=W0718
 
 def get_preprocessing(name):
     """
@@ -20,11 +20,10 @@ def get_preprocessing(name):
     return downloaders[name]
 
 
-def preprocess_wav2spectrogram(path):
+def preprocess_wav2spectrogram():
     """
     Preprocess single wav under given path to spectrogram
     """
-    pass
 
 
 def preprocess_midi2sequence(path):
@@ -53,7 +52,7 @@ def preprocess_classic_piano(midi_root, save_dir, num_workers):
         except KeyboardInterrupt:
             print(" Abort")
             return
-        except Exception:
+        except Exception:  # noqa
             print(" Error")
             continue
 

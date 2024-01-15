@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import Any, Optional, Union
 from coopertunes.datatools.miditools import EventSeq, ControlSeq

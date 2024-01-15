@@ -2,10 +2,11 @@
 File from https://github.com/djosix/Performance-RNN-PyTorch on MIT licence.
 """
 
-import numpy as np
 import copy
 import itertools
 import collections
+
+import numpy as np
 from pretty_midi import PrettyMIDI, Note, Instrument
 
 
@@ -66,7 +67,8 @@ class NoteSeq:
         notes = itertools.chain(*[seq.notes for seq in note_seqs])
         return NoteSeq(list(notes))
 
-    def __init__(self, notes=[]):
+    def __init__(self, notes=None):
+        notes = [] if notes is None else notes
         self.notes = []
         if notes:
             for note in notes:
@@ -136,15 +138,13 @@ class NoteSeq:
 
 
 class Event:
-    def __init__(self, type, time, value):
-        self.type = type
+    def __init__(self, etype, time, value):
+        self.type = etype
         self.time = time
         self.value = value
 
     def __repr__(self):
-        return "Event(type={}, time={}, value={})".format(
-            self.type, self.time, self.value
-        )
+        return f"Event(type={self.type}, time={self.time}, value={self.value})"
 
 
 class EventSeq:
@@ -244,7 +244,8 @@ class EventSeq:
             n / (EventSeq.velocity_steps - 1),
         )
 
-    def __init__(self, events=[]):
+    def __init__(self, events=None):
+        events = [] if events is None else events
         for event in events:
             assert isinstance(event, Event)
 
@@ -314,9 +315,7 @@ class Control:
         self.note_density = note_density  # int
 
     def __repr__(self):
-        return "Control(pitch_histogram={}, note_density={})".format(
-            self.pitch_histogram, self.note_density
-        )
+        return "Control(pitch_histogram={self.pitch_histogram}, note_density={self.note_density})"
 
     def to_array(self):
         feat_dims = ControlSeq.feat_dims()
@@ -419,29 +418,3 @@ class ControlSeq:
         return np.concatenate(
             [ndens, phist], 1  # [steps, 1] density index  # [steps, hist_dim] 0-255
         )  # [steps, hist_dim + 1]
-
-
-if __name__ == "__main__":
-    import pickle
-    import sys
-
-    path = sys.argv[1] if len(sys.argv) > 1 else "dataset/midi/ecomp/BLINOV02.mid"
-
-    print("Converting MIDI to EventSeq")
-    es = EventSeq.from_note_seq(NoteSeq.from_midi_file(path))
-
-    print("Converting EventSeq to MIDI")
-    EventSeq.from_array(es.to_array()).to_note_seq().to_midi_file("/tmp/test.mid")
-
-    print("Converting EventSeq to ControlSeq")
-    cs = ControlSeq.from_event_seq(es)
-
-    print("Saving compressed ControlSeq")
-    pickle.dump(cs.to_compressed_array(), open("/tmp/cs-compressed.data", "wb"))
-
-    print("Loading compressed ControlSeq")
-    c = ControlSeq.recover_compressed_array(
-        pickle.load(open("/tmp/cs-compressed.data", "rb"))
-    )
-
-    print("Done")

@@ -1,8 +1,8 @@
 import os
-import requests  # type: ignore
+import requests  # noqa
 from bs4 import BeautifulSoup
 
-from coopertunes.datatools.config import DataType, DATA_NAMES
+from coopertunes.datatools.config import DataType
 
 
 def get_datatype_dataset_downloaders(data_type: DataType):
@@ -27,7 +27,7 @@ def download_dataset(output_dir, data_type, name):
 
 def download_file(url, output_dir):
     local_filename = os.path.join(output_dir, url.split("/")[-1])
-    with requests.get(url, stream=True) as response:
+    with requests.get(url, stream=True, timeout=1000) as response:
         with open(local_filename, "wb") as file:
             for chunk in response.iter_content(chunk_size=8192):
                 if chunk:
@@ -57,7 +57,7 @@ def download_classic_piano(output_dir):
             print(midi_url)
             download_file(midi_url, output_dir)
     os.chdir(output_dir)
-    [os.remove(file) for file in os.listdir() if not file.endswith(".mid")]
+    _ = [os.remove(file) for file in os.listdir() if not file.endswith(".mid")]
 
 
 if __name__ == "__main__":
