@@ -6,14 +6,14 @@ from typing import TypeVar
 
 import librosa
 import matplotlib.pyplot as plt
-import scipy.io.wavfile
 import numpy as np
+import scipy.io.wavfile
 import torch
 from coloredlogs import ColoredFormatter
 from torch import nn
 
+from coopertunes.datatools.miditools import ControlSeq, EventSeq
 from coopertunes.distributed import global_rank, local_rank
-from coopertunes.datatools.miditools import EventSeq, ControlSeq
 
 L = TypeVar("L")
 
@@ -233,44 +233,49 @@ def transposition(events, controls, offset=0):
     controls = np.array(controls, dtype=np.float32)
     event_feat_ranges = EventSeq.feat_ranges()
 
-    on = event_feat_ranges['note_on']
-    off = event_feat_ranges['note_off']
+    on = event_feat_ranges["note_on"]
+    off = event_feat_ranges["note_off"]
 
     if offset > 0:
-        indeces0 = (((on.start <= events) & (events < on.stop - offset)) |
-                    ((off.start <= events) & (events < off.stop - offset)))
-        indeces1 = (((on.stop - offset <= events) & (events < on.stop)) |
-                    ((off.stop - offset <= events) & (events < off.stop)))
+        indeces0 = ((on.start <= events) & (events < on.stop - offset)) | (
+            (off.start <= events) & (events < off.stop - offset)
+        )
+        indeces1 = ((on.stop - offset <= events) & (events < on.stop)) | (
+            (off.stop - offset <= events) & (events < off.stop)
+        )
         events[indeces0] += offset
         events[indeces1] += offset - 12
     elif offset < 0:
-        indeces0 = (((on.start - offset <= events) & (events < on.stop)) |
-                    ((off.start - offset <= events) & (events < off.stop)))
-        indeces1 = (((on.start <= events) & (events < on.start - offset)) |
-                    ((off.start <= events) & (events < off.start - offset)))
+        indeces0 = ((on.start - offset <= events) & (events < on.stop)) | (
+            (off.start - offset <= events) & (events < off.stop)
+        )
+        indeces1 = ((on.start <= events) & (events < on.start - offset)) | (
+            (off.start <= events) & (events < off.start - offset)
+        )
         events[indeces0] += offset
         events[indeces1] += offset + 12
 
     assert ((0 <= events) & (events < EventSeq.dim())).all()
-    histr = ControlSeq.feat_ranges()['pitch_histogram']
-    controls[:, :, histr.start:histr.stop] = np.roll(
-        controls[:, :, histr.start:histr.stop], offset, -1)
+    histr = ControlSeq.feat_ranges()["pitch_histogram"]
+    controls[:, :, histr.start : histr.stop] = np.roll(
+        controls[:, :, histr.start : histr.stop], offset, -1
+    )
 
     return events, controls
 
 
-def dict2params(d, f=','):
-    return f.join(f'{k}={v}' for k, v in d.items())
+def dict2params(d, f=","):
+    return f.join(f"{k}={v}" for k, v in d.items())
 
 
-def params2dict(p, f=',', e='='):
+def params2dict(p, f=",", e="="):
     d = {}
     for item in p.split(f):
         item = item.split(e)
         if len(item) < 2:
             continue
         k, *v = item
-        d[k] = eval('='.join(v))
+        d[k] = eval("=".join(v))
     return d
 
 
@@ -278,8 +283,8 @@ def compute_gradient_norm(parameters, norm_type=2):
     total_norm = 0
     for p in parameters:
         param_norm = p.grad.data.norm(norm_type)
-        total_norm += param_norm ** norm_type
-    total_norm = total_norm ** (1. / norm_type)
+        total_norm += param_norm**norm_type
+    total_norm = total_norm ** (1.0 / norm_type)
     return total_norm
 
 
@@ -292,6 +297,7 @@ def find_files_by_extensions(root, exts=[]):
             if name.endswith(ext):
                 return True
         return False
+
     for path, _, files in os.walk(root):
         for name in files:
             if _has_ext(name):
@@ -322,6 +328,10 @@ def dconv_same_padding(kernel_size, dilation=1):
 
 
 class PixelNormalization(nn.Module):
+    """
+    Pixel normalization proposed in https://arxiv.org/pdf/1902.08710.pdf
+    """
+
     def __init__(self, eps):
         super().__init__()
         self.eps = eps

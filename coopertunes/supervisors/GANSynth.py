@@ -13,6 +13,11 @@ from coopertunes.logger import Logger
 
 
 class GANSynthSupervisor:
+    """
+    Supervisor for GANSynth training
+    After init you can launch training with `train` method
+    """
+
     def __init__(self, models: Tuple, device, hparams: GANSynthHParams):
         self.generator = models[0]
         self.discriminator = models[1]
