@@ -3,6 +3,7 @@ from coopertunes.models.MelSpecVQVAE import MelSpecVQVAE
 from coopertunes.models.MelGan import MelGanGenerator, MelGanDiscriminator
 from coopertunes.models.Audio2Mel import Audio2Mel
 from coopertunes.models.PerformanceRNN import PerformanceRNN
+from coopertunes.models.PerformanceRNNattentive import PerformanceRNNattentive
 from coopertunes.models.model import Model
 
 
@@ -14,6 +15,7 @@ def get_model(model_name):
         "MelGanDiscriminator": MelGanDiscriminator,
         "Audio2Mel": Audio2Mel,
         "PerformanceRNN": PerformanceRNN,
+        "PerformanceRNNattentive": PerformanceRNNattentive,
     }
     return models_dict[model_name]
 
@@ -25,5 +27,6 @@ __all__ = [
     "MelGanGenerator",
     "MelGanDiscriminator",
     "Audio2Mel",
-    "PerformanceRNN"
+    "PerformanceRNN",
+    "PerformanceRNNattentive"
 ]

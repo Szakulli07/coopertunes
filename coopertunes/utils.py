@@ -19,6 +19,7 @@ L = TypeVar("L")
 
 
 AUDIO_EXTENSIONS = [".wav", ".flac", ".mp3"]
+MIDI_EXTENSIONS = [".midi", ".mid"]
 
 
 _LOGGER = logging.getLogger(__package__)
