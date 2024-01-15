@@ -1,3 +1,9 @@
+"""
+GANSynth model implementation based on:
+GANSynth paper - https://arxiv.org/pdf/1902.08710.pdf
+PGGAN paper - https://arxiv.org/pdf/1710.10196.pdf
+ACGAN paper - https://arxiv.org/pdf/1610.09585.pdf
+"""
 import torch
 from torch import nn
 from torch.nn import functional as F

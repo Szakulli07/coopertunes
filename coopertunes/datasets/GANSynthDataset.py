@@ -9,7 +9,11 @@ from torch.nn import functional as F
 
 class GANSynthDataset(Dataset):
     """
-    Dataset for NSynth [json/wav] - https://magenta.tensorflow.org/datasets/nsynth
+    Dataset class for NSynth [json/wav] - download from
+    https://magenta.tensorflow.org/datasets/nsynth
+    Dataset used for GANSynth model training
+    dataset folder should have structure "example.json" with metadata about
+    audio files and directory audio containing audio files with .wav file extension
     """
 
     def __init__(self, train_data_dir: Path):
