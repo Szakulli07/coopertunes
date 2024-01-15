@@ -22,11 +22,11 @@ class PerformanceRNNHParams(HParams):
 
         # Training
         self.train_data_dirs: list[Path] = [os.path.join(
-            "data", "processed", "midi", "train_data")]
+            "data", "processed", "midi", "classic_piano")]
         self.default_checkpoint: Path = os.path.join(
             "coopertunes", "checkpoints", "performancernn_pretrained.pt")
         self.learning_rate: float = 0.001
-        self.batch_size: int = 64
+        self.batch_size: int = 512
         self.window_size: int = 200
         self.stride_size: int = 10
         self.use_transposition: bool = False

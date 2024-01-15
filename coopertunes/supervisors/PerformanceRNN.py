@@ -14,7 +14,7 @@ from coopertunes.datasets import MidiDataset
 
 from coopertunes.hparams import PerformanceRNNHParams
 from coopertunes.logger import Logger
-from coopertunes.models import PerformanceRNN
+from coopertunes.models import PerformanceRNN, PerformanceRNNattentive
 from coopertunes.utils import log_info, transposition, compute_gradient_norm, find_files_by_extensions, event_indeces_to_midi_file
 
 from coopertunes.datatools.miditools import NoteSeq, EventSeq, ControlSeq, Control
@@ -195,6 +195,8 @@ class PerformanceRNNSupervisor:
             name = f'output-{i:03d}.mid'
             path = os.path.join(output_dir, name)
             event_indeces_to_midi_file(output, path)
+            if i == 8 :
+                break
 
     def _build_dataset(self):
         dataset = MidiDataset(self.data_path, verbose=True)
@@ -261,7 +263,8 @@ class PerformanceRNNSupervisor:
 
 if __name__ == "__main__":
     hparams = PerformanceRNNHParams()
-    model = PerformanceRNN(hparams)
+    # model = PerformanceRNN(hparams)
+    model = PerformanceRNNattentive(hparams)
     device = "cuda:0"
     supervisor = PerformanceRNNSupervisor(model, device, hparams)
 

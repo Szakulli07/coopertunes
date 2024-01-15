@@ -17,7 +17,7 @@ class HParams(ABC):
         self.checkpoints_dir: Path = Path("models/ckpt")
         self.logs_dir: Path = Path("models/log")
 
-        self.base_checkpoint: int | None = None
+        self.base_checkpoint: int | None = 1000
         self.steps_per_log: int = 10
         self.steps_per_ckpt: int = 1_000
         self.total_steps: int = 1_000_000
