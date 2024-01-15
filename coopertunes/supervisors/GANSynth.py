@@ -1,10 +1,13 @@
+from pathlib import Path
 from typing import Tuple
 
 import torch
 from torch import nn
 from torch.nn import functional as F
 from torch.optim import Adam
+from torch.utils.data import DataLoader
 
+from coopertunes.datasets import GANSynthDataset
 from coopertunes.hparams.GANSynth import GANSynthHParams
 from coopertunes.logger import Logger
 from coopertunes.models.GANSynth import Discriminator, Generator
@@ -17,14 +20,24 @@ class GANSynthSupervisor:
         self.discriminator = models[1]
         self.device = device
         self.hparams = hparams
+        self._logger = Logger("gansynth", self.hparams, device)
 
         self.generator_optimizer = Adam(self.generator.parameters(), lr=hparams.generator.lr, betas=hparams.generator.betas)
         self.discriminator_optimizer = Adam(self.discriminator.parameters(), lr=hparams.discriminator.lr, betas=hparams.discriminator.betas)
 
-        # TODO: real data
-        self.train_loader = None
+        self.train_loader = self._get_dataloader()
 
-        self._logger = Logger("gansynth", self.hparams, device)
+
+    def _get_dataloader(self):
+        dataset = GANSynthDataset(self.hparams, Path(self.hparams.train_data_dir))
+        return DataLoader(
+            dataset=dataset,
+            batch_size=self.hparams.batch_size,
+            drop_last=True,
+            shuffle=True,
+            num_workers=self.hparams.loader_num_workers,
+            persistent_workers=True
+        )
 
     def train(self):
         self.generator.to(self.device)
@@ -42,7 +55,7 @@ class GANSynthSupervisor:
             for data in self.train_loader:
                 self.discriminator_optimizer.zero_grad()
                 real_images = data[0].to(self.device)
-                real_pitch = data[1].to(self.device)
+                real_pitch = F.one_hot(data[1], 61).float().to(self.device)
                 batch_size = real_images.size(0)
                 label = torch.ones((batch_size,), dtype=torch.float, device=self.device)
                 (discriminator_output, discriminator_pitch) = self.discriminator(real_images)

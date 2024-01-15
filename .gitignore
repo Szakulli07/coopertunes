@@ -193,3 +193,6 @@ local_workspace/
 
 # dataset
 data
+
+# models and logs
+models

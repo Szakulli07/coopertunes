@@ -6,6 +6,7 @@ class GANSynthHParams(HParams):
     def __init__(self):
         super().__init__()
         self.epochs = 10
+        self.train_data_dir = "data/raw/nsynth-train"
         self.generator = GeneratorHParams()
         self.discriminator = DiscriminatorHParams()
 

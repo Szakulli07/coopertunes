@@ -113,8 +113,7 @@ class Generator(nn.Module):
             nn.ConvTranspose2d(dconv_filters, dconv_filters, dconv_kernel, padding=dconv_same_padding(dconv_kernel)),
             self.activation_function,
             PixelNormalization(hparams.eps),
-            nn.ConvTranspose2d(dconv_filters, 2, 1),
-            nn.Tanh()
+            nn.ConvTranspose2d(dconv_filters, 2, 1)
         )
 
     def forward(self, z, pitch):
