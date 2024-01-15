@@ -53,7 +53,7 @@ class MelDataset(Dataset):
         if mels.shape[-1] > self.hparams.segment_len:
             max_start = mels.shape[-1] - self.hparams.segment_len
             start = torch.randint(0, max_start, (1,))
-            mels = mels[:, :, start : start + self.hparams.segment_len]
+            mels = mels[:, :, start: start + self.hparams.segment_len]
         else:
             mels = F.pad(mels, (0, self.hparams.segment_len - mels.size(2)), "constant")
         return mels
