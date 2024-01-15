@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "coopertunes"
-version = "0.1.0"
+version = "0.2.0"
 authors = [
   { name="Łukasz Bondaruk", email="lukas.bond07@gmail.com" },
   { name="Oskar Bartosz", email="oskbsz@gmail.com" },

@@ -69,6 +69,12 @@ For now we included/are including 5 models. Some inside about them.
 * MelGAN - very good vocoder. It is used to create raw audio from mel spectrograms. There are better options like [HiFiGAN](https://github.com/jik876/hifi-gan) and many more complicated but MelGAN advantage is its simplicity. Many vocoders utilize [GAN](https://machinelearningmastery.com/what-are-generative-adversarial-networks-gans/) ideas so it is worth knowing this approach. To run succesfull training you will probably one about 10-60h and 2 weeks of GPU. Just remember you will quickly hear MelGAN producing "good" results but put on speakers and listen carefully because we are aiming for "very good"
 * PerformanceRNN - As said in original publicztion: ..."Performance RNN, an LSTM-based recurrent neural network designed to model polyphonic music with expressive timing and dynamics.". It is able to recreate sequences learned from midi files, and create guided midis itself. Main backbone of this network is Gated Recurent Unit.
 * PerformanceRNNattentive - As PerformanceRNN is generating note after note for each context, we utilized self attention module to all GRU's inputs. It allowed model to create music with more "piano keys pressed" at the same time, and overall better quality (in our opinion) in the same number of epochs as PerformanceRNN. 
+* GANSynth - based on [GANSynth](https://arxiv.org/pdf/1902.08710.pdf) which is [PGGAN](https://arxiv.org/pdf/1710.10196.pdf)
+used for generating spectrograms from noise for music with [ACGAN](https://arxiv.org/pdf/1610.09585.pdf) pitch conditioning.
+Author's implementation is part of [Google Magenta](https://magenta.tensorflow.org/) which is developed using tensorflow. This 
+project should be one of the first GANSynth implementation in [Pytorch](https://pytorch.org/). GANSynth is trained on
+[NSynth](https://magenta.tensorflow.org/datasets/nsynth) dataset. GANSynth is one of the biggest model in the project, because of 
+computational limits we couldn't benchmark it.
 
 ## Future works
 
