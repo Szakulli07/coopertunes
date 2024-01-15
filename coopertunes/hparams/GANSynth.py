@@ -2,7 +2,6 @@ from coopertunes.hparams.hparams import HParams
 
 
 class GANSynthHParams(HParams):
-
     def __init__(self):
         super().__init__()
         self.epochs = 10
@@ -14,7 +13,6 @@ class GANSynthHParams(HParams):
 
 
 class GeneratorHParams:
-
     def __init__(self):
         self.latent_dim = 256
         self.pitch_dim = 61
@@ -31,9 +29,7 @@ class GeneratorHParams:
         self.betas = (0, 0.99)
 
 
-
 class DiscriminatorHParams:
-    
     def __init__(self):
         self.leaky_relu_slope = 0.2
         self.block_conv_filters = [32, 64, 128, 256, 256, 256, 256]

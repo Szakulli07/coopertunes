@@ -6,15 +6,13 @@ import torchaudio
 from torch.utils.data import Dataset
 from torch.nn import functional as F
 
-from coopertunes.hparams.hparams import HParams
-
 
 class GANSynthDataset(Dataset):
     """
-    Dataset for NSynth [json/wav] - https://magenta.tensorflow.org/datasets/nsynth    
+    Dataset for NSynth [json/wav] - https://magenta.tensorflow.org/datasets/nsynth
     """
-    
-    def __init__(self, hparams: HParams, train_data_dir: Path):
+
+    def __init__(self, train_data_dir: Path):
         super().__init__()
         with (train_data_dir / "examples.json").open() as f:
             self.metadata = json.load(f)
@@ -25,7 +23,9 @@ class GANSynthDataset(Dataset):
         filepath = self.filepaths[idx]
         audio_tensor, _ = torchaudio.load(filepath)
         audio_tensor = torch.squeeze(audio_tensor, 0)
-        spectrogram = torch.view_as_real(torch.stft(audio_tensor, 2048, 512, return_complex=True))
+        spectrogram = torch.view_as_real(
+            torch.stft(audio_tensor, 2048, 512, return_complex=True)
+        )
         spectrogram = spectrogram.narrow(0, 0, 1024)
         spectrogram = F.pad(spectrogram, (0, 0, 0, 2))
         spectrogram = torch.movedim(spectrogram, (2, 0), (0, 2))
@@ -39,11 +39,3 @@ class GANSynthDataset(Dataset):
 
     def __len__(self):
         return len(self.filepaths)
-        
-
-if __name__ == "__main__":
-    dataset = GANSynthDataset(None, Path("data/raw/nsynth-train"))
-    for i in range(100):
-        data = dataset[i]
-        spectrogram, pitch = data
-        x = 0 
