@@ -228,7 +228,7 @@ def transposition(events, controls, offset=0):
     if offset > 0:
         indeces0 = (((on.start <= events) & (events < on.stop - offset)) |
                     ((off.start <= events) & (events < off.stop - offset)))
-        indeces1 = (((on.stop - offset  <= events) & (events < on.stop)) |
+        indeces1 = (((on.stop - offset <= events) & (events < on.stop)) |
                     ((off.stop - offset <= events) & (events < off.stop)))
         events[indeces0] += offset
         events[indeces1] += offset - 12
@@ -243,7 +243,7 @@ def transposition(events, controls, offset=0):
     assert ((0 <= events) & (events < EventSeq.dim())).all()
     histr = ControlSeq.feat_ranges()['pitch_histogram']
     controls[:, :, histr.start:histr.stop] = np.roll(
-                    controls[:, :, histr.start:histr.stop], offset, -1)
+        controls[:, :, histr.start:histr.stop], offset, -1)
 
     return events, controls
 

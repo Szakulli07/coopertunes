@@ -43,13 +43,14 @@ class PerformanceRNNSupervisor:
 
         self.event_dim = EventSeq.dim()
         self.control_dim = ControlSeq.dim()
-    
+
         self.device = device
 
         self.step = 1
 
         self.model = model
-        self.optimizer = optim.Adam(model.parameters(), lr=hparams.learning_rate)
+        self.optimizer = optim.Adam(
+            model.parameters(), lr=hparams.learning_rate)
         self._logger = Logger("performancernn", hparams, device)
 
         self.train_dl, self.val_dl = self._build_loaders()
@@ -87,31 +88,33 @@ class PerformanceRNNSupervisor:
             else:
                 controls = None
 
-            init = torch.randn(self.batch_size, self.model.init_dim).to(self.device)
+            init = torch.randn(
+                self.batch_size, self.model.init_dim).to(self.device)
             outputs = self.model.generate(init, self.window_size, events=events[:-1], controls=controls,
-                                    teacher_forcing_ratio=self.teacher_forcing_ratio, output_type='logit')
+                                          teacher_forcing_ratio=self.teacher_forcing_ratio, output_type='logit')
             assert outputs.shape[:2] == events.shape[:2]
 
-            loss = loss_function(outputs.view(-1, self.event_dim), events.view(-1))
+            loss = loss_function(
+                outputs.view(-1, self.event_dim), events.view(-1))
             self.model.zero_grad()
             loss.backward()
 
             norm = compute_gradient_norm(self.model.parameters())
             nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
-            
+
             self.optimizer.step()
 
             stats = {
-                    'generator': loss.item(),
-                    'gradient_norm': norm.item(),
-                    'step_time': (time.time() - start),
-                }
+                'generator': loss.item(),
+                'gradient_norm': norm.item(),
+                'step_time': (time.time() - start),
+            }
             if self.step % self.hparams.steps_per_log == 0:
                 self._log_train_stats(stats)
 
-            self.step += 1 
+            self.step += 1
 
-    def generate(self, output_dir, control = None, init_zero=False, use_beam_search=False):
+    def generate(self, output_dir, control=None, init_zero=False, use_beam_search=False):
         """
         Generate music sample.
         It uses options specified at hparams, and:
@@ -127,11 +130,13 @@ class PerformanceRNNSupervisor:
                     assert len(files) > 0, f'no file in "{control}"'
                     control = np.random.choice(files)
                 _, compressed_controls = torch.load(control)
-                controls = ControlSeq.recover_compressed_array(compressed_controls)
+                controls = ControlSeq.recover_compressed_array(
+                    compressed_controls)
                 if max_len == 0:
                     max_len = controls.shape[0]
                 controls = torch.tensor(controls, dtype=torch.float32)
-                controls = controls.unsqueeze(1).repeat(1, self.batch_size, 1).to(device)
+                controls = controls.unsqueeze(1).repeat(
+                    1, self.batch_size, 1).to(device)
                 control = f'control sequence from "{control}"'
 
             else:
@@ -140,7 +145,8 @@ class PerformanceRNNSupervisor:
                 if len(pitch_histogram) == 0:
                     pitch_histogram = np.ones(12) / 12
                 else:
-                    pitch_histogram = np.array(list(map(float, pitch_histogram)))
+                    pitch_histogram = np.array(
+                        list(map(float, pitch_histogram)))
                     assert pitch_histogram.size == 12
                     assert np.all(pitch_histogram >= 0)
                     pitch_histogram = pitch_histogram / pitch_histogram.sum() \
@@ -148,14 +154,15 @@ class PerformanceRNNSupervisor:
                 note_density = int(note_density)
                 assert note_density in range(len(ControlSeq.note_density_bins))
                 control = Control(pitch_histogram, note_density)
-                controls = torch.tensor(control.to_array(), dtype=torch.float32)
+                controls = torch.tensor(
+                    control.to_array(), dtype=torch.float32)
                 controls = controls.repeat(1, self.batch_size, 1).to(device)
                 control = repr(control)
         else:
             controls = None
             control = 'NONE'
 
-        use_beam_search = self.hparams.beam_size>0
+        use_beam_search = self.hparams.beam_size > 0
         greedy_ratio = self.hparams.greedy_ratio
         beam_size = self.hparams.beam_size
         if use_beam_search:
@@ -177,29 +184,29 @@ class PerformanceRNNSupervisor:
                                             verbose=True)
             else:
                 outputs = model.generate(init, self.hparams.max_len,
-                                        controls=controls,
-                                        greedy=greedy_ratio,
-                                        temperature=self.hparams.temperature,
-                                        verbose=True)
+                                         controls=controls,
+                                         greedy=greedy_ratio,
+                                         temperature=self.hparams.temperature,
+                                         verbose=True)
 
         outputs = outputs.cpu().numpy().T  # [batch, steps]
-        
+
         os.makedirs(output_dir, exist_ok=True)
         for i, output in enumerate(outputs):
             name = f'output-{i:03d}.mid'
             path = os.path.join(output_dir, name)
             event_indeces_to_midi_file(output, path)
 
-
     def _build_dataset(self):
         dataset = MidiDataset(self.data_path, verbose=True)
         dataset_size = len(dataset.samples)
         assert dataset_size > 0
-        return dataset    
-    
+        return dataset
+
     def _build_loaders(self) -> tuple[DataLoader, DataLoader | None]:
         dataset = self._build_dataset()
-        batch_gen = dataset.batches(self.batch_size, self.window_size, self.stride_size)
+        batch_gen = dataset.batches(
+            self.batch_size, self.window_size, self.stride_size)
         return batch_gen, None
 
     def _save_checkpoint(self, best: bool = False):
@@ -226,7 +233,8 @@ class PerformanceRNNSupervisor:
             log_info("No checkpoint specified, nothing loaded")
             return
 
-        path = os.path.join(self.hparams.checkpoints_dir, str(self.hparams.base_checkpoint)+".pt")
+        path = os.path.join(self.hparams.checkpoints_dir,
+                            str(self.hparams.base_checkpoint)+".pt")
         checkpoint = torch.load(path)
         log_info("Loading checkpoint from %d step", checkpoint["step"])
 
@@ -257,8 +265,8 @@ if __name__ == "__main__":
     model = PerformanceRNN(hparams)
     device = "cuda:0"
     supervisor = PerformanceRNNSupervisor(model, device, hparams)
-    
-    # LOAD PRETRAINED WEIGHTS FROM AUTHORS 
+
+    # LOAD PRETRAINED WEIGHTS FROM AUTHORS
     # supervisor.load_pretrained()
 
     # TRAIN MODEL

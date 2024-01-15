@@ -159,7 +159,8 @@ class EventSeq:
                     velocity = max(velocity, EventSeq.velocity_range.start)
                     velocity = min(velocity, EventSeq.velocity_range.stop - 1)
                     velocity_index = np.searchsorted(velocity_bins, velocity)
-                    note_events.append(Event('velocity', note.start, velocity_index))
+                    note_events.append(
+                        Event('velocity', note.start, velocity_index))
 
                 pitch_index = note.pitch - EventSeq.pitch_range.start
                 note_events.append(Event('note_on', note.start, pitch_index))
@@ -333,7 +334,8 @@ class ControlSeq:
 
             while start < i:
                 if events[start].type == 'note_on':
-                    abs_pitch = events[start].value + EventSeq.pitch_range.start
+                    abs_pitch = events[start].value + \
+                        EventSeq.pitch_range.start
                     rel_pitch = _rel_pitch(abs_pitch)
                     pitch_count[rel_pitch] -= 1.
                     note_count -= 1.
@@ -391,7 +393,8 @@ class ControlSeq:
         ndens = np.zeros([array.shape[0], feat_dims['note_density']])
         ndens[np.arange(array.shape[0]), array[:, 0]] = 1.  # [steps, dens_dim]
         phist = array[:, 1:].astype(np.float64) / 255  # [steps, hist_dim]
-        return np.concatenate([ndens, phist], 1)  # [steps, dens_dim + hist_dim]
+        # [steps, dens_dim + hist_dim]
+        return np.concatenate([ndens, phist], 1)
 
     def __init__(self, controls):
         for control in controls:
@@ -412,19 +415,22 @@ class ControlSeq:
 if __name__ == '__main__':
     import pickle
     import sys
-    path = sys.argv[1] if len(sys.argv) > 1 else 'dataset/midi/ecomp/BLINOV02.mid'
+    path = sys.argv[1] if len(
+        sys.argv) > 1 else 'dataset/midi/ecomp/BLINOV02.mid'
 
     print('Converting MIDI to EventSeq')
     es = EventSeq.from_note_seq(NoteSeq.from_midi_file(path))
 
     print('Converting EventSeq to MIDI')
-    EventSeq.from_array(es.to_array()).to_note_seq().to_midi_file('/tmp/test.mid')
+    EventSeq.from_array(es.to_array()).to_note_seq(
+    ).to_midi_file('/tmp/test.mid')
 
     print('Converting EventSeq to ControlSeq')
     cs = ControlSeq.from_event_seq(es)
 
     print('Saving compressed ControlSeq')
-    pickle.dump(cs.to_compressed_array(), open('/tmp/cs-compressed.data', 'wb'))
+    pickle.dump(cs.to_compressed_array(), open(
+        '/tmp/cs-compressed.data', 'wb'))
 
     print('Loading compressed ControlSeq')
     c = ControlSeq.recover_compressed_array(

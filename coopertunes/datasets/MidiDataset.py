@@ -1,6 +1,7 @@
 import os
 import torch
-import itertools, os
+import itertools
+import os
 import numpy as np
 from progress.bar import Bar
 
@@ -10,6 +11,7 @@ from coopertunes.datatools.miditools import EventSeq, ControlSeq
 
 # pylint: disable=E1101
 # pylint: disable=W0101
+
 
 class MidiDataset:
     def __init__(self, root, verbose=False):
@@ -27,7 +29,7 @@ class MidiDataset:
             self.samples.append((eventseq, controlseq))
             self.seqlens.append(len(eventseq))
         self.avglen = np.mean(self.seqlens)
-    
+
     def batches(self, batch_size, window_size, stride_size):
         indeces = [(i, range(j, j + window_size))
                    for i, seqlen in enumerate(self.seqlens)
@@ -50,7 +52,7 @@ class MidiDataset:
                     eventseq_batch.clear()
                     controlseq_batch.clear()
                     n = 0
-    
+
     def __repr__(self):
         return (f'Dataset(root="{self.root}", '
                 f'samples={len(self.samples)}, '

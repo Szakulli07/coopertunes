@@ -109,7 +109,8 @@ class MelGanSupervisor:
                 wt = D_weights * feat_weights
                 for i in range(self.hparams.num_D):
                     for j in range(len(D_fake[i]) - 1):
-                        loss_feat += wt * F.l1_loss(D_fake[i][j], D_real[i][j].detach())
+                        loss_feat += wt * \
+                            F.l1_loss(D_fake[i][j], D_real[i][j].detach())
 
                 self.netG.zero_grad()
                 (loss_G + self.hparams.lambda_feat * loss_feat).backward()
@@ -205,7 +206,8 @@ class MelGanSupervisor:
         audio, sr = librosa.core.load(audio_path)
         audio_tensor = torch.from_numpy(audio)[None]
         spec = self.audio2mel(audio_tensor.unsqueeze(1).to(self.device))
-        reconstructed = self.netG(spec.to(self.device)).squeeze((0, 1)).detach().cpu().numpy()
+        reconstructed = self.netG(spec.to(self.device)).squeeze(
+            (0, 1)).detach().cpu().numpy()
         sf.write(output_path, reconstructed, sr)
 
     def __call__(self, spectrogram: np.ndarray):
@@ -268,13 +270,15 @@ class MelGanSupervisor:
         dataset: AudioDataset
         if training:
             dataset = AudioDataset(
-                training_files=Path(self.hparams.processed_data_dir/"train_files.txt"),
+                training_files=Path(
+                    self.hparams.processed_data_dir/"train_files.txt"),
                 segment_length=self.hparams.seq_len,
                 sampling_rate=self.hparams.sampling_rate
             )
         else:
             dataset = AudioDataset(
-                training_files=Path(self.hparams.processed_data_dir/"test_files.txt"),
+                training_files=Path(
+                    self.hparams.processed_data_dir/"test_files.txt"),
                 segment_length=self.hparams.sampling_rate * 4,
                 sampling_rate=self.hparams.sampling_rate,
                 augment=False,
@@ -295,7 +299,8 @@ class MelGanSupervisor:
 
     def load_pretrained(self):
         checkpoint = torch.load(self.hparams.default_checkpoint)
-        log_info("Loading checkpoint from pretrained from authors", checkpoint["step"])
+        log_info("Loading checkpoint from pretrained from authors",
+                 checkpoint["step"])
 
         self.netG.load_state_dict(checkpoint["netG"])
         self.optG.load_state_dict(checkpoint["optG"])
@@ -304,6 +309,7 @@ class MelGanSupervisor:
         self.step = checkpoint["step"]
         self.step += 1
         self.epoch = checkpoint["epoch"]
+
 
 if __name__ == "__main__":
     mel_hparams = MelGanHParams()

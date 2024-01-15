@@ -13,6 +13,7 @@ class VectorQuantizer(nn.Module):
     Reference:
     [1] https://github.com/deepmind/sonnet/blob/v2/sonnet/src/nets/vqvae.py
     """
+
     def __init__(
         self,
         num_embeddings: int,
@@ -34,7 +35,8 @@ class VectorQuantizer(nn.Module):
         # Compute L2 distance between latents and embedding weights
         dist = torch.sum(flat_latents ** 2, dim=1, keepdim=True) + \
             torch.sum(self.embedding.weight ** 2, dim=1) - \
-            2 * torch.matmul(flat_latents, self.embedding.weight.t())  # [BHW x K]
+            2 * torch.matmul(flat_latents,
+                             self.embedding.weight.t())  # [BHW x K]
 
         # Get the encoding that has the min distance
         encoding_inds = torch.argmin(dist, dim=1)
@@ -42,11 +44,13 @@ class VectorQuantizer(nn.Module):
 
         # Convert to one-hot encodings
         device = latents.device
-        encoding_one_hot = torch.zeros(encoding_inds.size(0), self.K, device=device)
+        encoding_one_hot = torch.zeros(
+            encoding_inds.size(0), self.K, device=device)
         encoding_one_hot.scatter_(1, encoding_inds, 1)  # [BHW x K]
 
         # Quantize the latents
-        quantized_latents = torch.matmul(encoding_one_hot, self.embedding.weight)  # [BHW, D]
+        quantized_latents = torch.matmul(
+            encoding_one_hot, self.embedding.weight)  # [BHW, D]
         quantized_latents = rearrange(
             quantized_latents,
             '(b h w) d -> b h w d',
@@ -64,7 +68,8 @@ class VectorQuantizer(nn.Module):
         # Add the residue back to the latents
         quantized_latents = latents + (quantized_latents - latents).detach()
 
-        return rearrange(quantized_latents, 'b h w d -> b d h w'), vq_loss  # [B x D x H x W]
+        # [B x D x H x W]
+        return rearrange(quantized_latents, 'b h w d -> b d h w'), vq_loss
 
 
 class ResidualLayer(nn.Module):

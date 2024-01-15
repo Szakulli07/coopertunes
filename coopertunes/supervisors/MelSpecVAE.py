@@ -74,11 +74,13 @@ class MelSpecVAESupervisor:
                 mels = batch["mels"].to(self.device)
 
                 reconstruct, x, mu, log_var = self.engines['model'](mels)
-                loss = self.engines['model'].loss_function(reconstruct, x, mu, log_var)
+                loss = self.engines['model'].loss_function(
+                    reconstruct, x, mu, log_var)
                 self.engines['model'].backward(loss['loss'])
 
             grad_norm = torch.nn.utils.clip_grad_norm_(
-                self.engines['model'].parameters(), self.hparams.grad_clip_thresh
+                self.engines['model'].parameters(
+                ), self.hparams.grad_clip_thresh
             )
 
             self.engines['model'].step()
@@ -118,7 +120,8 @@ class MelSpecVAESupervisor:
         for i, batch in enumerate(self.val_dl):
             mels = batch["mels"].to(self.device)
             reconstruct, x, mu, log_var = self.engines['model'](mels)
-            loss = self.engines['model'].loss_function(reconstruct, x, mu, log_var)
+            loss = self.engines['model'].loss_function(
+                reconstruct, x, mu, log_var)
 
             loss_list.append(loss["loss"].item())
             recon_list.append(loss["recon"].item())
@@ -247,5 +250,6 @@ if __name__ == "__main__":
         rank=global_rank()
 
     )
-    vae_supervisor = MelSpecVAESupervisor(mel_spec_vae, torch.device('cuda'), mel_hparams)
+    vae_supervisor = MelSpecVAESupervisor(
+        mel_spec_vae, torch.device('cuda'), mel_hparams)
     vae_supervisor.train()

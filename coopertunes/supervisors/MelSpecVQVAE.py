@@ -75,11 +75,13 @@ class MelSpecVQVAESupervisor:
                 mels = batch["mels"].to(self.device)
 
                 reconstruct, x, vq_loss = self.engines['model'](mels)
-                loss = self.engines['model'].loss_function(reconstruct, x, vq_loss)
+                loss = self.engines['model'].loss_function(
+                    reconstruct, x, vq_loss)
                 self.engines['model'].backward(loss["loss"])
 
             grad_norm = torch.nn.utils.clip_grad_norm_(
-               self.engines['model'].parameters(), self.hparams.grad_clip_thresh
+                self.engines['model'].parameters(
+                ), self.hparams.grad_clip_thresh
             )
 
             self.engines['model'].step()
@@ -138,7 +140,8 @@ class MelSpecVQVAESupervisor:
             'step_time': (time.time() - start),
         }
 
-        self._logger.log_audio(batch=reconstructs, step=self.step, audio_type='output')
+        self._logger.log_audio(
+            batch=reconstructs, step=self.step, audio_type='output')
         self._logger.update_running_vals(stats, 'validation')
         self._logger.log_step(self.epoch, self.step, prefix='validation')
         self._logger.log_running_vals_to_tb(self.step)
@@ -241,15 +244,16 @@ if __name__ == "__main__":
 
     mel_hparams = MelSpecVQVAEHParams()
     mel_spec_vae = MelSpecVQVAE(mel_hparams)
-    
+
     summary(mel_spec_vae)
-    
+
     torch.distributed.init_process_group(
         backend='nccl',
         init_method=f'tcp://{os.getenv("MASTER_ADDR")}:{os.getenv("MASTER_PORT")}',
         world_size=get_world_size(),
         rank=global_rank()
     )
-    
-    vae_supervisor = MelSpecVQVAESupervisor(mel_spec_vae, torch.device('cuda'), mel_hparams)
+
+    vae_supervisor = MelSpecVQVAESupervisor(
+        mel_spec_vae, torch.device('cuda'), mel_hparams)
     vae_supervisor.train()
