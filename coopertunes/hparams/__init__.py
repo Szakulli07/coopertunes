@@ -20,5 +20,5 @@ __all__ = [
     "MelSpecVAEHParams",
     "MelSpecVQVAEHParams",
     "Audio2MelHParams",
-    "MelGanHParams"
+    "MelGanHParams",
 ]

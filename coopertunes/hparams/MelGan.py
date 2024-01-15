@@ -14,7 +14,8 @@ class MelGanHParams(HParams):
 
         self.summary_path = Path("models/summary")
         self.default_checkpoint = Path(
-            "coopertunes/checkpoints/MelGan/multi_speaker.pt")
+            "coopertunes/checkpoints/MelGan/multi_speaker.pt"
+        )
 
         # Model
         self.seq_len: int = 8192

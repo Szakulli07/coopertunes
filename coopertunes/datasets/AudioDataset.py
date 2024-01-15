@@ -39,7 +39,7 @@ class AudioDataset(torch.utils.data.Dataset):
         if audio.size(0) >= self.segment_length:
             max_audio_start = audio.size(0) - self.segment_length
             audio_start = random.randint(0, max_audio_start)
-            audio = audio[audio_start: audio_start + self.segment_length]
+            audio = audio[audio_start : audio_start + self.segment_length]
         else:
             audio = F.pad(
                 audio, (0, self.segment_length - audio.size(0)), "constant"

@@ -5,7 +5,6 @@ from .hparams import HParams
 
 
 class Audio2MelHParams(HParams):
-
     def __init__(self, hparams: Optional[Union[Path, dict[str, Any]]] = None):
         super().__init__()
 

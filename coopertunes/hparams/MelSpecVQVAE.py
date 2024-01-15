@@ -5,7 +5,6 @@ from .hparams import HParams
 
 
 class MelSpecVQVAEHParams(HParams):
-
     def __init__(self, hparams: Optional[Union[Path, dict[str, Any]]] = None):
         super().__init__()
 
@@ -50,20 +49,20 @@ class MelSpecVQVAEHParams(HParams):
     @property
     def ds_cfg(self):
         return {
-            'train_micro_batch_size_per_gpu': self.batch_size,
-            'gradient_accumulation_steps': self.grad_accumulation_steps,
-            'optimizer': {
-                'type': 'AdamW',
-                'lr': self.lr,
-                'betas': self.betas,
+            "train_micro_batch_size_per_gpu": self.batch_size,
+            "gradient_accumulation_steps": self.grad_accumulation_steps,
+            "optimizer": {
+                "type": "AdamW",
+                "lr": self.lr,
+                "betas": self.betas,
             },
-            'scheduler': {
-                'type': 'ExponentialLR',
-                'params': {
-                    'gamma': self.lr_decay,
+            "scheduler": {
+                "type": "ExponentialLR",
+                "params": {
+                    "gamma": self.lr_decay,
                 },
             },
-            'fp16': {'enabled': self.use_fp16},
-            'bf16': {'enabled': self.use_bf16},
-            'amp': {'enabled': self.use_amp},
+            "fp16": {"enabled": self.use_fp16},
+            "bf16": {"enabled": self.use_bf16},
+            "amp": {"enabled": self.use_amp},
         }

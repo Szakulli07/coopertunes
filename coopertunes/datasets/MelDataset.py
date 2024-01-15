@@ -7,8 +7,7 @@ from einops import rearrange
 from torch.utils.data import Dataset
 
 from ..hparams import HParams
-from ..utils import (AUDIO_EXTENSIONS, convert_audios2mels_h, log_info,
-                     normalize_audio)
+from ..utils import AUDIO_EXTENSIONS, convert_audios2mels_h, log_info, normalize_audio
 
 
 class MelDataset(Dataset):
@@ -28,8 +27,7 @@ class MelDataset(Dataset):
         filepaths = []
         for data_dir in self.data_dirs:
             filepaths.extend(
-                [fp for ext in AUDIO_EXTENSIONS for fp in data_dir.rglob(
-                    f"*{ext}")]
+                [fp for ext in AUDIO_EXTENSIONS for fp in data_dir.rglob(f"*{ext}")]
             )
         return filepaths
 
@@ -39,10 +37,8 @@ class MelDataset(Dataset):
         audio, sample_rate = librosa.load(filepath)
         audio = normalize_audio(audio, sample_rate, self.hparams.sample_rate)
 
-        mels = convert_audios2mels_h(
-            audio, self.hparams
-        )
-        mels = rearrange(mels, '... -> 1 ...')
+        mels = convert_audios2mels_h(audio, self.hparams)
+        mels = rearrange(mels, "... -> 1 ...")
         mels = self._get_segment(mels)
 
         return {"mels": mels}
@@ -57,9 +53,7 @@ class MelDataset(Dataset):
         if mels.shape[-1] > self.hparams.segment_len:
             max_start = mels.shape[-1] - self.hparams.segment_len
             start = torch.randint(0, max_start, (1,))
-            mels = mels[:, :, start: start + self.hparams.segment_len]
+            mels = mels[:, :, start : start + self.hparams.segment_len]
         else:
-            mels = F.pad(
-                mels, (0, self.hparams.segment_len - mels.size(2)), "constant"
-            )
+            mels = F.pad(mels, (0, self.hparams.segment_len - mels.size(2)), "constant")
         return mels
