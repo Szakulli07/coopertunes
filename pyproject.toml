@@ -30,7 +30,8 @@ dependencies = [
   "progress==1.6",
   "black==23.12.1",
   "torch==2.0.1",
-  "torchaudio==2.0.2"]
+  "torchaudio==2.0.2",
+  "requests==2.31.0"]
 
 [project.urls]
 "Homepage" = "https://github.com/Szakulli07/coopertunes"

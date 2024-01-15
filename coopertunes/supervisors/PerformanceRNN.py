@@ -286,7 +286,7 @@ if __name__ == "__main__":
     prhparams = PerformanceRNNHParams()
     # model = PerformanceRNN(hparams)
     perfrnn = PerformanceRNNattentive(prhparams)
-    dev = "cuda:0"
+    dev = torch.device("cuda:0")
     supervisor = PerformanceRNNSupervisor(perfrnn, dev, prhparams)
 
     # LOAD PRETRAINED WEIGHTS FROM AUTHORS

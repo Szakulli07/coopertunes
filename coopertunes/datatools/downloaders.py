@@ -1,7 +1,6 @@
 import os
-import requests
+import requests  # type: ignore
 from bs4 import BeautifulSoup
-from enum import Enum
 
 from coopertunes.datatools.config import DataType, DATA_NAMES
 

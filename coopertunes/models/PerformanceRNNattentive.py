@@ -8,7 +8,7 @@ import torch.nn as nn
 import numpy as np
 from progress.bar import Bar
 
-from coopertunes.models import PerformanceRNN
+from coopertunes.models.PerformanceRNN import PerformanceRNN
 from coopertunes.hparams.PerformanceRNN import PerformanceRNNHParams
 
 
