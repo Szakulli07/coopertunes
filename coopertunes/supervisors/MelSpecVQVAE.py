@@ -13,6 +13,7 @@ from coopertunes.distributed import (
     global_rank,
     is_global_leader
 )
+
 from coopertunes.hparams import MelSpecVQVAEHParams
 from coopertunes.logger import Logger
 from coopertunes.models import MelSpecVQVAE
@@ -240,13 +241,15 @@ if __name__ == "__main__":
 
     mel_hparams = MelSpecVQVAEHParams()
     mel_spec_vae = MelSpecVQVAE(mel_hparams)
+    
     summary(mel_spec_vae)
+    
     torch.distributed.init_process_group(
         backend='nccl',
         init_method=f'tcp://{os.getenv("MASTER_ADDR")}:{os.getenv("MASTER_PORT")}',
         world_size=get_world_size(),
         rank=global_rank()
-
     )
+    
     vae_supervisor = MelSpecVQVAESupervisor(mel_spec_vae, torch.device('cuda'), mel_hparams)
     vae_supervisor.train()

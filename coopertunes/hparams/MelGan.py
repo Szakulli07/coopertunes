@@ -15,9 +15,7 @@ class MelGanHParams(HParams):
 
         self.summary_path = os.path.join("models", "summary")
         self.default_checkpoint = os.path.join("coopertunes", "checkpoints", "MelGan", "multi_speaker.pt")
-        Path(
-            "coopertunes/checkpoints/MelGan/multi_speaker.pt")
-
+        
         # Model
         self.seq_len: int = 8192
         self.sampling_rate: int = 22050

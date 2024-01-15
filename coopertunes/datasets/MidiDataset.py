@@ -5,16 +5,16 @@ import numpy as np
 from progress.bar import Bar
 
 # from hparams.PerformanceRNN import PerformanceRNNHParams
-import utils
-from datatools.miditools import EventSeq, ControlSeq
+from coopertunes.utils import find_files_by_extensions
+from coopertunes.datatools.miditools import EventSeq, ControlSeq
 
 # pylint: disable=E1101
 # pylint: disable=W0101
 
-class Dataset:
+class MidiDataset:
     def __init__(self, root, verbose=False):
         assert os.path.isdir(root), root
-        paths = utils.find_files_by_extensions(root, ['.data'])
+        paths = find_files_by_extensions(root, ['.data'])
         self.root = root
         self.samples = []
         self.seqlens = []

@@ -3,6 +3,7 @@ from coopertunes.hparams.MelSpecVAE import MelSpecVAEHParams
 from coopertunes.hparams.MelSpecVQVAE import MelSpecVQVAEHParams
 from coopertunes.hparams.MelGan import MelGanHParams
 from coopertunes.hparams.Audio2Mel import Audio2MelHParams
+from coopertunes.hparams.PerformanceRNN import PerformanceRNNHParams
 
 
 def get_hparams(model_name: str):
@@ -11,6 +12,7 @@ def get_hparams(model_name: str):
         "MelSpecVQVAE": MelSpecVQVAEHParams,
         "MelGan": MelGanHParams,
         "Audio2Mel": Audio2MelHParams,
+        "PerformanceRNN": PerformanceRNNHParams,
     }
     return hparams_dict[model_name]
 
@@ -20,5 +22,6 @@ __all__ = [
     "MelSpecVAEHParams",
     "MelSpecVQVAEHParams",
     "Audio2MelHParams",
-    "MelGanHParams"
+    "MelGanHParams",
+    "PerformanceRNNHParams"
 ]

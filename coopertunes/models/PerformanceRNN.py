@@ -11,12 +11,12 @@ from collections import namedtuple
 import numpy as np
 from progress.bar import Bar
 
-from models.model import Model
-from hparams.PerformanceRNN import PerformanceRNNHParams
+from coopertunes.models.model import Model
+from coopertunes.hparams.PerformanceRNN import PerformanceRNNHParams
 
 class PerformanceRNN(Model):
     def __init__(self, hparams: PerformanceRNNHParams, device: str = "cuda:0"):
-        super().__init__()
+        super().__init__(hparams)
 
         self.event_dim = hparams.event_dim
         self.control_dim = hparams.control_dim

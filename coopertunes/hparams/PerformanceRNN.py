@@ -2,7 +2,7 @@ import os
 import numpy as np
 from pathlib import Path
 from typing import Any, Optional, Union
-from datatools.miditools import EventSeq, ControlSeq
+from coopertunes.datatools.miditools import EventSeq, ControlSeq
 
 from .hparams import HParams
 
@@ -20,6 +20,7 @@ class PerformanceRNNHParams(HParams):
         self.gru_dropout: float = 0.3
 
         #Training
+        self.train_data_dirs:list[Path] = [os.path.join("data", "processed", "midi", "train_data")]
         self.default_checkpoint: Path = os.path.join("coopertunes", "checkpoints", "PerformanceRNN", "default_checkpoint.pt")
         self.learning_rate: float = 0.001
         self.batch_size: int = 64
@@ -28,5 +29,7 @@ class PerformanceRNNHParams(HParams):
         self.use_transposition: bool = False
         self.control_ratio: float = 1.0
         self.teacher_forcing_ratio: float = 1.0
+        self.reset_optimizer: bool = False
+        self.enable_logging: bool = True
         
 
