@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "coopertunes"
-version = "0.1.0"
+version = "0.2.0"
 authors = [
   { name="Łukasz Bondaruk", email="lukas.bond07@gmail.com" },
   { name="Oskar Bartosz", email="oskbsz@gmail.com" },
@@ -25,7 +25,15 @@ dependencies = [
   "librosa==0.9.1",
   "scipy==1.11.4",
   "argparse==1.4.0",
-  "torch-summary==1.4.5"]
+  "torch-summary==1.4.5",
+  "pretty_midi==0.2.10",
+  "progress==1.6",
+  "black==23.12.1",
+  "torch==2.0.1",
+  "torchaudio==2.0.2",
+  "requests==2.31.0",
+  "types-requests==2.31.0.20240106",
+  "beautifulsoup4==4.12.2"]
 
 [project.urls]
 "Homepage" = "https://github.com/Szakulli07/coopertunes"

@@ -8,11 +8,7 @@ from einops import rearrange
 from torch.utils.data import DataLoader
 
 from coopertunes.datasets import MelDataset
-from coopertunes.distributed import (
-    get_world_size,
-    global_rank,
-    is_global_leader
-)
+from coopertunes.distributed import get_world_size, global_rank, is_global_leader
 from coopertunes.hparams import MelSpecVAEHParams
 from coopertunes.logger import Logger
 from coopertunes.models import MelSpecVAE
@@ -23,7 +19,9 @@ class MelSpecVAESupervisor:
     """Supervisor for MelSpecVAESupervisor
     After init you can launch training with `train` method"""
 
-    def __init__(self, model: MelSpecVAE, device: torch.device, hparams: MelSpecVAEHParams):
+    def __init__(
+        self, model: MelSpecVAE, device: torch.device, hparams: MelSpecVAEHParams
+    ):
         self.model = model
         self.device = device
         self.hparams = hparams
@@ -46,9 +44,8 @@ class MelSpecVAESupervisor:
             self.hparams.dumps_to_file()
 
     def train(self):
-
         if is_global_leader():
-            log_info('Started training')
+            log_info("Started training")
 
         for engine in self.engines.values():
             engine.train()
@@ -68,29 +65,29 @@ class MelSpecVAESupervisor:
 
             start = time.time()
 
-            self.engines['model'].zero_grad()
+            self.engines["model"].zero_grad()
             for _ in range(self.hparams.grad_accumulation_steps):
                 batch = next(train_dl_iter)
                 mels = batch["mels"].to(self.device)
 
-                reconstruct, x, mu, log_var = self.engines['model'](mels)
-                loss = self.engines['model'].loss_function(reconstruct, x, mu, log_var)
-                self.engines['model'].backward(loss['loss'])
+                reconstruct, x, mu, log_var = self.engines["model"](mels)
+                loss = self.engines["model"].loss_function(reconstruct, x, mu, log_var)
+                self.engines["model"].backward(loss["loss"])
 
             grad_norm = torch.nn.utils.clip_grad_norm_(
-                self.engines['model'].parameters(), self.hparams.grad_clip_thresh
+                self.engines["model"].parameters(), self.hparams.grad_clip_thresh
             )
 
-            self.engines['model'].step()
+            self.engines["model"].step()
             torch.cuda.synchronize()
 
             stats = {
-                'loss': loss["loss"].item(),
-                'recon': loss["recon"].item(),
-                'kld': loss["kld"].item(),
-                'grad_norm': grad_norm.item(),
-                'learning_rate': self.engines['model'].get_lr()[0],
-                'step_time': (time.time() - start),
+                "loss": loss["loss"].item(),
+                "recon": loss["recon"].item(),
+                "kld": loss["kld"].item(),
+                "grad_norm": grad_norm.item(),
+                "learning_rate": self.engines["model"].get_lr()[0],
+                "step_time": (time.time() - start),
             }
             if is_global_leader():
                 self._log_train_stats(stats)
@@ -108,7 +105,7 @@ class MelSpecVAESupervisor:
 
     @torch.inference_mode()
     def eval(self):
-        log_info('Started validation')
+        log_info("Started validation")
 
         start = time.time()
         loss_list = []
@@ -117,8 +114,8 @@ class MelSpecVAESupervisor:
 
         for i, batch in enumerate(self.val_dl):
             mels = batch["mels"].to(self.device)
-            reconstruct, x, mu, log_var = self.engines['model'](mels)
-            loss = self.engines['model'].loss_function(reconstruct, x, mu, log_var)
+            reconstruct, x, mu, log_var = self.engines["model"](mels)
+            loss = self.engines["model"].loss_function(reconstruct, x, mu, log_var)
 
             loss_list.append(loss["loss"].item())
             recon_list.append(loss["recon"].item())
@@ -126,22 +123,21 @@ class MelSpecVAESupervisor:
 
             if i == 0:
                 reconstructs = [None] * batch["mels"].shape[0]
-                for i, recon in enumerate(rearrange(reconstruct, 'n 1 c t ->n c t')):
+                for i, recon in enumerate(rearrange(reconstruct, "n 1 c t ->n c t")):
                     reconstructs[i] = recon.detach()
 
         stats = {
-            'loss': mean(loss_list),
-            'recon': mean(recon_list),
-            'kld': mean(kld_list),
-            'step_time': (time.time() - start),
+            "loss": mean(loss_list),
+            "recon": mean(recon_list),
+            "kld": mean(kld_list),
+            "step_time": (time.time() - start),
         }
 
-        self._logger.log_audio(
-            batch=reconstructs, step=self.step, audio_type='output')
-        self._logger.update_running_vals(stats, 'validation')
-        self._logger.log_step(self.epoch, self.step, prefix='validation')
+        self._logger.log_audio(batch=reconstructs, step=self.step, audio_type="output")
+        self._logger.update_running_vals(stats, "validation")
+        self._logger.log_step(self.epoch, self.step, prefix="validation")
         self._logger.log_running_vals_to_tb(self.step)
-        log_info('Validation ends')
+        log_info("Validation ends")
 
     def _build_loaders(self) -> tuple[DataLoader, DataLoader | None]:
         train_dataset = self._build_dataset(training=True)
@@ -156,9 +152,11 @@ class MelSpecVAESupervisor:
             for i, batch in enumerate(val_dl):
                 if i == 0:
                     mels = [None] * batch["mels"].shape[0]
-                    for j, mel in enumerate(rearrange(batch["mels"], 'n 1 c t ->n c t')):
+                    for j, mel in enumerate(
+                        rearrange(batch["mels"], "n 1 c t ->n c t")
+                    ):
                         mels[j] = mel
-                    self._logger.log_audio(mels, step=0, audio_type='target')
+                    self._logger.log_audio(mels, step=0, audio_type="target")
 
         return train_dl, val_dl
 
@@ -168,12 +166,10 @@ class MelSpecVAESupervisor:
             model_parameters=self.model.parameters(),
             config=self.hparams.ds_cfg,
         )
-        engines = {'model': engine}
+        engines = {"model": engine}
         return engines
 
-    def _create_dataloader(
-        self, dataset: MelDataset, training: bool
-    ) -> DataLoader:
+    def _create_dataloader(self, dataset: MelDataset, training: bool) -> DataLoader:
         collate_fn = None
         batch_size = (
             self.hparams.batch_size if training else self.hparams.valid_batch_size
@@ -199,7 +195,7 @@ class MelSpecVAESupervisor:
     def _save_checkpoint(self):
         self.hparams.checkpoints_dir.mkdir(parents=True, exist_ok=True)
         for label, engine in self.engines.items():
-            tag = f'{label}_{self.step}'
+            tag = f"{label}_{self.step}"
             engine.save_checkpoint(self.hparams.checkpoints_dir, tag=tag)
         log_info("Saved checkpoint after %d step", self.step)
 
@@ -212,7 +208,7 @@ class MelSpecVAESupervisor:
         log_info("Loading checkpoint from %d step", self.step)
 
         for label, engine in self.engines.items():
-            tag = f'{label}_{self.step}'
+            tag = f"{label}_{self.step}"
             engine.load_checkpoint(
                 self.hparams.checkpoints_dir,
                 tag=tag,
@@ -227,8 +223,8 @@ class MelSpecVAESupervisor:
             self.epoch += 1
 
     def _log_train_stats(self, stats):
-        self._logger.update_running_vals(stats, 'training')
-        self._logger.log_step(self.epoch, self.step, prefix='training')
+        self._logger.update_running_vals(stats, "training")
+        self._logger.log_step(self.epoch, self.step, prefix="training")
 
         if self.step and self.step % self.hparams.steps_per_log == 0:
             self._logger.log_running_vals_to_tb(self.step)
@@ -241,11 +237,13 @@ if __name__ == "__main__":
     mel_spec_vae = MelSpecVAE(mel_hparams)
     summary(mel_spec_vae)
     torch.distributed.init_process_group(
-        backend='nccl',
+        backend="nccl",
         init_method=f'tcp://{os.getenv("MASTER_ADDR")}:{os.getenv("MASTER_PORT")}',
         world_size=get_world_size(),
-        rank=global_rank()
-
+        rank=global_rank(),
     )
-    vae_supervisor = MelSpecVAESupervisor(mel_spec_vae, torch.device('cuda'), mel_hparams)
+    vae_supervisor = MelSpecVAESupervisor(
+        mel_spec_vae, torch.device("cuda"), mel_hparams
+    )
+
     vae_supervisor.train()

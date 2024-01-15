@@ -13,11 +13,7 @@ from coopertunes.datasets import AudioDataset
 from coopertunes.hparams import MelGanHParams, Audio2MelHParams
 from coopertunes.logger import Logger
 from coopertunes.models import MelGanGenerator, MelGanDiscriminator, Audio2Mel
-from coopertunes.utils import (
-    save_sample,
-    get_default_device,
-    log_info
-)
+from coopertunes.utils import save_sample, get_default_device, log_info
 
 
 class MelGanSupervisor:
@@ -50,9 +46,11 @@ class MelGanSupervisor:
         self.train_dl, self.val_dl = self._build_loaders()
 
         self.optG = torch.optim.Adam(
-            self.netG.parameters(), lr=hparams.learning_rate, betas=hparams.adam_betas)
+            self.netG.parameters(), lr=hparams.learning_rate, betas=hparams.adam_betas
+        )
         self.optD = torch.optim.Adam(
-            self.netD.parameters(), lr=hparams.learning_rate, betas=hparams.adam_betas)
+            self.netD.parameters(), lr=hparams.learning_rate, betas=hparams.adam_betas
+        )
 
         if self.hparams.base_checkpoint:
             self._load_checkpoint()
@@ -116,11 +114,11 @@ class MelGanSupervisor:
                 self.optG.step()
 
                 stats = {
-                    'discriminator': loss_D.item(),
-                    'generator': loss_G.item(),
-                    'feature_matching': loss_feat.item(),
-                    'mel_reconstruction': s_error,
-                    'step_time': (time.time() - start),
+                    "discriminator": loss_D.item(),
+                    "generator": loss_G.item(),
+                    "feature_matching": loss_feat.item(),
+                    "mel_reconstruction": s_error,
+                    "step_time": (time.time() - start),
                 }
                 self._log_train_stats(stats)
 
@@ -144,7 +142,7 @@ class MelGanSupervisor:
             save_sample(
                 self.hparams.logs_dir / (f"generated_{i}.wav"),
                 self.hparams.sampling_rate,
-                pred_audio
+                pred_audio,
             )
             self._logger.log_audio(
                 f"generated/sample_{i}.wav",
@@ -171,13 +169,13 @@ class MelGanSupervisor:
         }
         torch.save(
             checkpoint_state,
-            (self.hparams.checkpoints_dir/str(self.step)).with_suffix(".pt")
+            (self.hparams.checkpoints_dir / str(self.step)).with_suffix(".pt"),
         )
 
         if best:
             torch.save(
                 checkpoint_state,
-                (self.hparams.checkpoints_dir/'best').with_suffix(".pt")
+                (self.hparams.checkpoints_dir / "best").with_suffix(".pt"),
             )
         log_info("Saved checkpoint after %d step", self.step)
 
@@ -205,7 +203,9 @@ class MelGanSupervisor:
         audio, sr = librosa.core.load(audio_path)
         audio_tensor = torch.from_numpy(audio)[None]
         spec = self.audio2mel(audio_tensor.unsqueeze(1).to(self.device))
-        reconstructed = self.netG(spec.to(self.device)).squeeze((0, 1)).detach().cpu().numpy()
+        reconstructed = (
+            self.netG(spec.to(self.device)).squeeze((0, 1)).detach().cpu().numpy()
+        )
         sf.write(output_path, reconstructed, sr)
 
     def __call__(self, spectrogram: np.ndarray):
@@ -213,9 +213,9 @@ class MelGanSupervisor:
         Converts spectrogram to raw audio.
         spectrogram's shape is [1, bins, len]
         """
-        return self.netG(
-            torch.from_numpy(spectrogram).float().to(self.device)
-        ).squeeze(1)
+        return self.netG(torch.from_numpy(spectrogram).float().to(self.device)).squeeze(
+            1
+        )
 
     def _build_loaders(self) -> tuple[DataLoader, DataLoader | None]:
         train_dataset = self._build_dataset(training=True)
@@ -237,44 +237,43 @@ class MelGanSupervisor:
             save_sample(
                 self.hparams.logs_dir / f"original_{i}.wav",
                 self.hparams.sampling_rate,
-                audio
+                audio,
             )
             self._logger.log_audio(
-                f"original/sample_{i}.wav", audio, 0, sample_rate=self.hparams.sampling_rate)
+                f"original/sample_{i}.wav",
+                audio,
+                0,
+                sample_rate=self.hparams.sampling_rate,
+            )
 
             if i == self.hparams.n_test_samples - 1:
                 break
 
         return train_dl, val_dl
 
-    def _create_dataloader(
-        self, dataset: AudioDataset, training: bool
-    ) -> DataLoader:
+    def _create_dataloader(self, dataset: AudioDataset, training: bool) -> DataLoader:
         dataloader: DataLoader
         if training:
             dataloader = DataLoader(
-                dataset=dataset,
-                batch_size=self.hparams.batch_size,
-                num_workers=0
+                dataset=dataset, batch_size=self.hparams.batch_size, num_workers=0
             )
         else:
-            dataloader = DataLoader(
-                dataset=dataset,
-                batch_size=1
-            )
+            dataloader = DataLoader(dataset=dataset, batch_size=1)
         return dataloader
 
     def _build_dataset(self, training: bool) -> AudioDataset:
         dataset: AudioDataset
         if training:
             dataset = AudioDataset(
-                training_files=Path(self.hparams.processed_data_dir/"train_files.txt"),
+                training_files=Path(
+                    self.hparams.processed_data_dir / "train_files.txt"
+                ),
                 segment_length=self.hparams.seq_len,
-                sampling_rate=self.hparams.sampling_rate
+                sampling_rate=self.hparams.sampling_rate,
             )
         else:
             dataset = AudioDataset(
-                training_files=Path(self.hparams.processed_data_dir/"test_files.txt"),
+                training_files=Path(self.hparams.processed_data_dir / "test_files.txt"),
                 segment_length=self.hparams.sampling_rate * 4,
                 sampling_rate=self.hparams.sampling_rate,
                 augment=False,
@@ -287,11 +286,23 @@ class MelGanSupervisor:
             self.epoch += 1
 
     def _log_train_stats(self, stats):
-        self._logger.update_running_vals(stats, 'training')
-        self._logger.log_step(self.epoch, self.step, prefix='training')
+        self._logger.update_running_vals(stats, "training")
+        self._logger.log_step(self.epoch, self.step, prefix="training")
 
         if self.step and self.step % self.hparams.steps_per_log == 0:
             self._logger.log_running_vals_to_tb(self.step)
+
+    def load_pretrained(self):
+        checkpoint = torch.load(self.hparams.default_checkpoint)
+        log_info("Loading checkpoint from pretrained from authors", checkpoint["step"])
+
+        self.netG.load_state_dict(checkpoint["netG"])
+        self.optG.load_state_dict(checkpoint["optG"])
+        self.netD.load_state_dict(checkpoint["netD"])
+        self.optD.load_state_dict(checkpoint["optD"])
+        self.step = checkpoint["step"]
+        self.step += 1
+        self.epoch = checkpoint["epoch"]
 
 
 if __name__ == "__main__":
@@ -307,6 +318,6 @@ if __name__ == "__main__":
         melGanDiscriminator,
         melGanAudio2mel,
         get_default_device(),
-        mel_hparams
+        mel_hparams,
     )
     supervisor.train()
