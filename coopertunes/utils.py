@@ -287,6 +287,15 @@ def find_files_by_extensions(root, exts=[]):
                 yield os.path.join(path, name)
 
 
+def event_indeces_to_midi_file(event_indeces, midi_file_name, velocity_scale=0.8):
+    event_seq = EventSeq.from_array(event_indeces)
+    note_seq = event_seq.to_note_seq()
+    for note in note_seq.notes:
+        note.velocity = int((note.velocity - 64) * velocity_scale + 64)
+    note_seq.to_midi_file(midi_file_name)
+    return len(note_seq.notes)
+
+
 class PrintLayer(nn.Module):
     def __init__(self):
         super().__init__()

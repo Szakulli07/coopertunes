@@ -21,7 +21,7 @@ class PerformanceRNNHParams(HParams):
 
         #Training
         self.train_data_dirs:list[Path] = [os.path.join("data", "processed", "midi", "train_data")]
-        self.default_checkpoint: Path = os.path.join("coopertunes", "checkpoints", "PerformanceRNN", "default_checkpoint.pt")
+        self.default_checkpoint: Path = os.path.join("coopertunes", "checkpoints", "performancernn_pretrained.pt")
         self.learning_rate: float = 0.001
         self.batch_size: int = 64
         self.window_size: int = 200
@@ -31,5 +31,10 @@ class PerformanceRNNHParams(HParams):
         self.teacher_forcing_ratio: float = 1.0
         self.reset_optimizer: bool = False
         self.enable_logging: bool = True
-        
 
+        #Generation
+        self.max_len: int = 1000 
+        self.greedy_ratio: float = 1.0
+        self.stochastic_beam_search: bool = False
+        self.beam_size: int = 0
+        self.temperature: float = 1.0

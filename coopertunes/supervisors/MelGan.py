@@ -293,6 +293,17 @@ class MelGanSupervisor:
         if self.step and self.step % self.hparams.steps_per_log == 0:
             self._logger.log_running_vals_to_tb(self.step)
 
+    def load_pretrained(self):
+        checkpoint = torch.load(self.hparams.default_checkpoint)
+        log_info("Loading checkpoint from pretrained from authors", checkpoint["step"])
+
+        self.netG.load_state_dict(checkpoint["netG"])
+        self.optG.load_state_dict(checkpoint["optG"])
+        self.netD.load_state_dict(checkpoint["netD"])
+        self.optD.load_state_dict(checkpoint["optD"])
+        self.step = checkpoint["step"]
+        self.step += 1
+        self.epoch = checkpoint["epoch"]
 
 if __name__ == "__main__":
     mel_hparams = MelGanHParams()
