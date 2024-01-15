@@ -1,30 +1,31 @@
 import os
-import re
 import sys
-import torch
 import hashlib
-from progress.bar import Bar
 from concurrent.futures import ProcessPoolExecutor
+
+import torch
+from progress.bar import Bar
 
 from coopertunes.datatools.miditools import NoteSeq, EventSeq, ControlSeq
 from coopertunes.utils import find_files_by_extensions
-from coopertunes.datatools.config import DataType, DATA_NAMES
+
+# pylint: disable=W0718
+
 
 def get_preprocessing(name):
     """
     Returns processing funtion for dataset.
     Name should be in DATA_NAMES values.
     """
-    downloaders = {
-            "classic_piano": preprocess_classic_piano
-        } 
+    downloaders = {"classic_piano": preprocess_classic_piano}
     return downloaders[name]
 
-def preprocess_wav2spectrogram(path):
+
+def preprocess_wav2spectrogram():
     """
     Preprocess single wav under given path to spectrogram
     """
-    pass
+
 
 def preprocess_midi2sequence(path):
     """
@@ -36,12 +37,13 @@ def preprocess_midi2sequence(path):
     control_seq = ControlSeq.from_event_seq(event_seq)
     return event_seq.to_array(), control_seq.to_compressed_array()
 
+
 def preprocess_classic_piano(midi_root, save_dir, num_workers):
-    midi_paths = list(find_files_by_extensions(midi_root, ['.mid', '.midi']))
+    midi_paths = list(find_files_by_extensions(midi_root, [".mid", ".midi"]))
     os.makedirs(save_dir, exist_ok=True)
-    out_fmt = '{}-{}.data'
+    out_fmt = "{}-{}.data"
     faulty_data_counter = 0
-    
+
     results = []
     executor = ProcessPoolExecutor(num_workers)
 
@@ -49,25 +51,24 @@ def preprocess_classic_piano(midi_root, save_dir, num_workers):
         try:
             results.append((path, executor.submit(preprocess_midi2sequence, path)))
         except KeyboardInterrupt:
-            print(' Abort')
+            print(" Abort")
             return
-        except:
-            print(' Error')
+        except Exception:  # noqa
+            print(" Error")
             continue
-    
-    for path, future in Bar('Processing').iter(results):
+
+    for path, future in Bar("Processing").iter(results):
         name = os.path.basename(path)
         code = hashlib.md5(path.encode()).hexdigest()
         save_path = os.path.join(save_dir, out_fmt.format(name, code))
         try:
             torch.save(future.result(), save_path)
         except OSError:
-            faulty_data_counter +=1
+            faulty_data_counter += 1
     print(faulty_data_counter)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     preprocess_classic_piano(
-            midi_root=sys.argv[1],
-            save_dir=sys.argv[2],
-            num_workers=int(sys.argv[3]))
+        midi_root=sys.argv[1], save_dir=sys.argv[2], num_workers=int(sys.argv[3])
+    )

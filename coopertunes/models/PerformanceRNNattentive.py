@@ -4,14 +4,11 @@ Our proposition of PerformanceRNN with self Attention on input mechanizm.
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from torch.distributions import Categorical, Gumbel
 
-from collections import namedtuple
 import numpy as np
 from progress.bar import Bar
 
-from coopertunes.models import PerformanceRNN
+from coopertunes.models.PerformanceRNN import PerformanceRNN
 from coopertunes.hparams.PerformanceRNN import PerformanceRNNHParams
 
 
@@ -50,8 +47,6 @@ class PerformanceRNNattentive(PerformanceRNN):
         self.self_attention = nn.MultiheadAttention(embed_dim=self.input_dim, num_heads=8)
         self.attention_output = nn.LayerNorm(self.input_dim)
 
-
-
         self._initialize_weights()
 
     def forward(self, event, control=None, hidden=None):
@@ -71,11 +66,11 @@ class PerformanceRNNattentive(PerformanceRNN):
             assert control.shape == (1, batch_size, self.control_dim)
 
         concat = torch.cat([event, default, control], -1)
-        input = self.concat_input_fc(concat)
-        input = self.concat_input_fc_activation(input)
+        inp = self.concat_input_fc(concat)
+        inp = self.concat_input_fc_activation(inp)
 
-        attention_output, _ = self.self_attention(input, input, input)
-        attention_output += input
+        attention_output, _ = self.self_attention(inp, inp, inp)
+        attention_output += inp
         attention_output = self.attention_output(attention_output)
 
         _, hidden = self.gru(attention_output, hidden)

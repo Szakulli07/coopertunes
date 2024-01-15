@@ -4,20 +4,17 @@ Slightly modified code from https://github.com/djosix/Performance-RNN-PyTorch on
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from torch.distributions import Categorical, Gumbel
 
-from collections import namedtuple
 import numpy as np
 from progress.bar import Bar
 
-from coopertunes.models.model import Model
 from coopertunes.hparams.PerformanceRNN import PerformanceRNNHParams
 
 
-class PerformanceRNN(Model):
+class PerformanceRNN(nn.Module):
     def __init__(self, hparams: PerformanceRNNHParams, device: str = "cuda:0"):
-        super().__init__(hparams)
+        super().__init__()
 
         self.event_dim = hparams.event_dim
         self.control_dim = hparams.control_dim
@@ -33,18 +30,23 @@ class PerformanceRNN(Model):
         self.device = device
 
         self.inithid_fc = nn.Linear(
-            hparams.init_dim, hparams.gru_layers * hparams.hidden_dim)
+            hparams.init_dim, hparams.gru_layers * hparams.hidden_dim
+        )
         self.inithid_fc_activation = nn.Tanh()
 
-        self.event_embedding = nn.Embedding(
-            hparams.event_dim, hparams.event_dim)
+        self.event_embedding = nn.Embedding(hparams.event_dim, hparams.event_dim)
         self.concat_input_fc = nn.Linear(self.concat_dim, self.input_dim)
         self.concat_input_fc_activation = nn.LeakyReLU(0.1, inplace=True)
 
-        self.gru = nn.GRU(self.input_dim, self.hidden_dim,
-                          num_layers=hparams.gru_layers, dropout=hparams.gru_dropout)
+        self.gru = nn.GRU(
+            self.input_dim,
+            self.hidden_dim,
+            num_layers=hparams.gru_layers,
+            dropout=hparams.gru_dropout,
+        )
         self.output_fc = nn.Linear(
-            hparams.hidden_dim * hparams.gru_layers, self.output_dim)
+            hparams.hidden_dim * hparams.gru_layers, self.output_dim
+        )
         self.output_fc_activation = nn.Softmax(dim=-1)
 
         self._initialize_weights()
@@ -52,18 +54,17 @@ class PerformanceRNN(Model):
     def _initialize_weights(self):
         nn.init.xavier_normal_(self.event_embedding.weight)
         nn.init.xavier_normal_(self.inithid_fc.weight)
-        self.inithid_fc.bias.data.fill_(0.)
+        self.inithid_fc.bias.data.fill_(0.0)
         nn.init.xavier_normal_(self.concat_input_fc.weight)
         nn.init.xavier_normal_(self.output_fc.weight)
-        self.output_fc.bias.data.fill_(0.)
+        self.output_fc.bias.data.fill_(0.0)
 
     def _sample_event(self, output, greedy=True, temperature=1.0):
         if greedy:
             return output.argmax(-1)
-        else:
-            output = output / temperature
-            probs = self.output_fc_activation(output)
-            return Categorical(probs).sample()
+        output = output / temperature
+        probs = self.output_fc_activation(output)
+        return Categorical(probs).sample()
 
     def forward(self, event, control=None, hidden=None):
         # One step forward
@@ -75,17 +76,16 @@ class PerformanceRNN(Model):
 
         if control is None:
             default = torch.ones(1, batch_size, 1).to(self.device)
-            control = torch.zeros(
-                1, batch_size, self.control_dim).to(self.device)
+            control = torch.zeros(1, batch_size, self.control_dim).to(self.device)
         else:
             default = torch.zeros(1, batch_size, 1).to(self.device)
             assert control.shape == (1, batch_size, self.control_dim)
 
         concat = torch.cat([event, default, control], -1)
-        input = self.concat_input_fc(concat)
-        input = self.concat_input_fc_activation(input)
+        inp = self.concat_input_fc(concat)
+        inp = self.concat_input_fc_activation(inp)
 
-        _, hidden = self.gru(input, hidden)
+        _, hidden = self.gru(inp, hidden)
         output = hidden.permute(1, 0, 2).contiguous()
         output = output.view(batch_size, -1).unsqueeze(0)
         output = self.output_fc(output)
@@ -111,8 +111,18 @@ class PerformanceRNN(Model):
             return controls[:steps]
         return controls.repeat(steps, 1, 1)
 
-    def generate(self, init, steps, events=None, controls=None, greedy=1.0,
-                 temperature=1.0, teacher_forcing_ratio=1.0, output_type='index', verbose=False):
+    def generate(
+        self,
+        init,
+        steps,
+        events=None,
+        controls=None,
+        greedy=1.0,
+        temperature=1.0,
+        teacher_forcing_ratio=1.0,
+        output_type="index",
+        verbose=False,
+    ):
         # init [batch_size, init_dim]
         # events [steps, batch_size] indeces
         # controls [1 or steps, batch_size, control_dim]
@@ -125,7 +135,7 @@ class PerformanceRNN(Model):
         if use_teacher_forcing:
             assert len(events.shape) == 2
             assert events.shape[0] >= steps - 1
-            events = events[:steps-1]
+            events = events[: steps - 1]
 
         event = self.get_primary_event(batch_size)
         use_control = controls is not None
@@ -136,21 +146,22 @@ class PerformanceRNN(Model):
         outputs = []
         step_iter = range(steps)
         if verbose:
-            step_iter = Bar('Generating').iter(step_iter)
+            step_iter = Bar("Generating").iter(step_iter)
 
         for step in step_iter:
             control = controls[step].unsqueeze(0) if use_control else None
             output, hidden = self.forward(event, control, hidden)
 
             use_greedy = np.random.random() < greedy
-            event = self._sample_event(output, greedy=use_greedy,
-                                       temperature=temperature)
+            event = self._sample_event(
+                output, greedy=use_greedy, temperature=temperature
+            )
 
-            if output_type == 'index':
+            if output_type == "index":
                 outputs.append(event)
-            elif output_type == 'softmax':
+            elif output_type == "softmax":
                 outputs.append(self.output_fc_activation(output))
-            elif output_type == 'logit':
+            elif output_type == "logit":
                 outputs.append(output)
             else:
                 assert False
@@ -161,8 +172,16 @@ class PerformanceRNN(Model):
 
         return torch.cat(outputs, 0)
 
-    def beam_search(self, init, steps, beam_size, controls=None,
-                    temperature=1.0, stochastic=False, verbose=False):
+    def beam_search(
+        self,
+        init,
+        steps,
+        beam_size,
+        controls=None,
+        temperature=1.0,
+        stochastic=False,
+        verbose=False,
+    ):
         assert len(init.shape) == 2 and init.shape[1] == self.init_dim
         assert self.event_dim >= beam_size > 0 and steps > 0
 
@@ -183,27 +202,25 @@ class PerformanceRNN(Model):
 
         # Initial event
         event = self.get_primary_event(batch_size)  # [1, batch]
-        event = event[:, :, None].repeat(
-            1, 1, current_beam_size)  # [1, batch, 1]
+        event = event[:, :, None].repeat(1, 1, current_beam_size)  # [1, batch, 1]
 
         # [batch, beam, 1]   event sequences of beams
         beam_events = event[0, :, None, :].repeat(1, current_beam_size, 1)
 
         # [batch, beam] log probs sum of beams
-        beam_log_prob = torch.zeros(
-            batch_size, current_beam_size).to(self.device)
+        beam_log_prob = torch.zeros(batch_size, current_beam_size).to(self.device)
 
         if stochastic:
             # [batch, beam] Gumbel perturbed log probs of beams
-            beam_log_prob_perturbed = torch.zeros(
-                batch_size, current_beam_size).to(self.device)
-            beam_z = torch.full((batch_size, beam_size), float('inf'))
+            torch.zeros(batch_size, current_beam_size).to(self.device)
+            torch.full((batch_size, beam_size), float("inf"))
             gumbel_dist = Gumbel(0, 1)
 
         step_iter = range(steps)
         if verbose:
-            step_iter = Bar(['', 'Stochastic '][stochastic] +
-                            'Beam Search').iter(step_iter)
+            step_iter = Bar(["", "Stochastic "][stochastic] + "Beam Search").iter(
+                step_iter
+            )
 
         for step in step_iter:
             if controls is not None:
@@ -213,7 +230,8 @@ class PerformanceRNN(Model):
                 control = control.repeat(1, 1, current_beam_size, 1)
                 # [1, batch*beam, control]
                 control = control.view(
-                    1, batch_size * current_beam_size, self.control_dim)
+                    1, batch_size * current_beam_size, self.control_dim
+                )
             else:
                 control = None
 
@@ -221,76 +239,92 @@ class PerformanceRNN(Model):
             event = event.view(1, batch_size * current_beam_size)
             # [grus, batch*beam, hid]
             hidden = hidden.view(
-                self.gru_layers, batch_size * current_beam_size, self.hidden_dim)
+                self.gru_layers, batch_size * current_beam_size, self.hidden_dim
+            )
 
             logits, hidden = self.forward(event, control, hidden)
             # [grus, batch, cbeam, hid]
-            hidden = hidden.view(self.gru_layers, batch_size,
-                                 current_beam_size, self.hidden_dim)
-            logits = (logits / temperature).view(1, batch_size,
-                                                 current_beam_size, self.event_dim)  # [1, batch, cbeam, out]
+            hidden = hidden.view(
+                self.gru_layers, batch_size, current_beam_size, self.hidden_dim
+            )
+            logits = (logits / temperature).view(
+                1, batch_size, current_beam_size, self.event_dim
+            )
 
-            beam_log_prob_expand = logits + \
-                beam_log_prob[None, :, :, None]  # [1, batch, cbeam, out]
+            beam_log_prob_expand = (
+                logits + beam_log_prob[None, :, :, None]
+            )  # [1, batch, cbeam, out]
             beam_log_prob_expand_batch = beam_log_prob_expand.view(
-                1, batch_size, -1)  # [1, batch, cbeam*out]
+                1, batch_size, -1
+            )  # [1, batch, cbeam*out]
 
             if stochastic:
-                beam_log_prob_expand_perturbed = beam_log_prob_expand + \
-                    gumbel_dist.sample(beam_log_prob_expand.shape)
+                beam_log_prob_expand_perturbed = (
+                    beam_log_prob_expand
+                    + gumbel_dist.sample(beam_log_prob_expand.shape)
+                )
                 # [1, batch, cbeam]
-                beam_log_prob_Z, _ = beam_log_prob_expand_perturbed.max(-1)
+                _, _ = beam_log_prob_expand_perturbed.max(-1)
                 # print(beam_log_prob_Z)
-                beam_log_prob_expand_perturbed_normalized = beam_log_prob_expand_perturbed
-                # beam_log_prob_expand_perturbed_normalized = -torch.log(
-                #     torch.exp(-beam_log_prob_perturbed[None, :, :, None])
-                #     - torch.exp(-beam_log_prob_Z[:, :, :, None])
-                #     + torch.exp(-beam_log_prob_expand_perturbed)) # [1, batch, cbeam, out]
-                # beam_log_prob_expand_perturbed_normalized = beam_log_prob_perturbed[None, :, :, None] + beam_log_prob_expand_perturbed # [1, batch, cbeam, out]
+                beam_log_prob_expand_perturbed_normalized = (
+                    beam_log_prob_expand_perturbed
+                )
 
-                beam_log_prob_expand_perturbed_normalized_batch = \
-                    beam_log_prob_expand_perturbed_normalized.view(
-                        1, batch_size, -1)  # [1, batch, cbeam*out]
+                beam_log_prob_expand_perturbed_normalized_batch = (
+                    beam_log_prob_expand_perturbed_normalized.view(1, batch_size, -1)
+                )  # [1, batch, cbeam*out]
                 _, top_indices = beam_log_prob_expand_perturbed_normalized_batch.topk(
-                    beam_size, -1)  # [1, batch, cbeam]
+                    beam_size, -1
+                )  # [1, batch, cbeam]
 
-                beam_log_prob_perturbed = \
-                    torch.gather(
-                        beam_log_prob_expand_perturbed_normalized_batch, -1, top_indices)[0]  # [batch, beam]
+                _ = torch.gather(
+                    beam_log_prob_expand_perturbed_normalized_batch, -1, top_indices
+                )[0]
 
             else:
                 _, top_indices = beam_log_prob_expand_batch.topk(beam_size, -1)
 
-            beam_log_prob = torch.gather(
-                beam_log_prob_expand_batch, -1, top_indices)[0]  # [batch, beam]
+            beam_log_prob = torch.gather(beam_log_prob_expand_batch, -1, top_indices)[
+                0
+            ]  # [batch, beam]
 
             beam_index_old = torch.arange(current_beam_size)[
-                None, None, :, None]  # [1, 1, cbeam, 1]
+                None, None, :, None
+            ]  # [1, 1, cbeam, 1]
             beam_index_old = beam_index_old.repeat(
-                1, batch_size, 1, self.output_dim)  # [1, batch, cbeam, out]
+                1, batch_size, 1, self.output_dim
+            )  # [1, batch, cbeam, out]
             beam_index_old = beam_index_old.view(
-                1, batch_size, -1)  # [1, batch, cbeam*out]
+                1, batch_size, -1
+            )  # [1, batch, cbeam*out]
             beam_index_new = torch.gather(beam_index_old, -1, top_indices)
 
             hidden = torch.gather(
-                hidden, 2, beam_index_new[:, :, :, None].repeat(4, 1, 1, 1024))
+                hidden, 2, beam_index_new[:, :, :, None].repeat(4, 1, 1, 1024)
+            )
 
             event_index = torch.arange(self.output_dim)[
-                None, None, None, :]  # [1, 1, 1, out]
+                None, None, None, :
+            ]  # [1, 1, 1, out]
             event_index = event_index.repeat(
-                1, batch_size, current_beam_size, 1)  # [1, batch, cbeam, out]
-            event_index = event_index.view(
-                1, batch_size, -1)  # [1, batch, cbeam*out]
+                1, batch_size, current_beam_size, 1
+            )  # [1, batch, cbeam, out]
+            event_index = event_index.view(1, batch_size, -1)  # [1, batch, cbeam*out]
             # [1, batch, cbeam*out]
             event = torch.gather(event_index, -1, top_indices)
 
             beam_events = torch.gather(
-                beam_events[None], 2, beam_index_new.unsqueeze(-1).repeat(1, 1, 1, beam_events.shape[-1]))
+                beam_events[None],
+                2,
+                beam_index_new.unsqueeze(-1).repeat(1, 1, 1, beam_events.shape[-1]),
+            )
             beam_events = torch.cat([beam_events, event.unsqueeze(-1)], -1)[0]
 
             current_beam_size = beam_size
 
-        best = beam_events[torch.arange(
-            batch_size).long(), beam_log_prob.argmax(-1)]
+        best = beam_events[torch.arange(batch_size).long(), beam_log_prob.argmax(-1)]
         best = best.contiguous().t()
         return best
+
+    def inference(self, **kwargs):
+        self.generate(**kwargs)
