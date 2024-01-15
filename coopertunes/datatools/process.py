@@ -11,6 +11,7 @@ from coopertunes.utils import find_files_by_extensions
 
 # pylint: disable=W0718
 
+
 def get_preprocessing(name):
     """
     Returns processing funtion for dataset.
