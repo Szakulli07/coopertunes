@@ -224,3 +224,17 @@ class PrintLayer(nn.Module):
         # Do your print / debug stuff here
         print(x.shape)
         return x
+
+
+def dconv_same_padding(kernel_size, dilation=1):
+    return int((kernel_size*dilation - dilation)/2)
+
+
+class PixelNormalization(nn.Module):
+
+    def __init__(self, eps):
+        super().__init__()
+        self.eps = eps
+
+    def forward(self, x):
+        return x * (((x**2).mean(dim=1, keepdim=True) + self.eps).rsqrt())
