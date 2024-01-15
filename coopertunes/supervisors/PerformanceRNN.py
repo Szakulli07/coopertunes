@@ -109,8 +109,7 @@ class PerformanceRNNSupervisor:
                 'gradient_norm': norm.item(),
                 'step_time': (time.time() - start),
             }
-            if self.step % self.hparams.steps_per_log == 0:
-                self._log_train_stats(stats)
+            self._log_train_stats(stats)
 
             self.step += 1
 
