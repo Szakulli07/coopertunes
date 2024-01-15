@@ -4,20 +4,17 @@ Slightly modified code from https://github.com/djosix/Performance-RNN-PyTorch on
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from torch.distributions import Categorical, Gumbel
 
-from collections import namedtuple
 import numpy as np
 from progress.bar import Bar
 
-from coopertunes.models.model import Model
 from coopertunes.hparams.PerformanceRNN import PerformanceRNNHParams
 
 
-class PerformanceRNN(Model):
+class PerformanceRNN(nn.Module):
     def __init__(self, hparams: PerformanceRNNHParams, device: str = "cuda:0"):
-        super().__init__(hparams)
+        super().__init__()
 
         self.event_dim = hparams.event_dim
         self.control_dim = hparams.control_dim
@@ -60,10 +57,9 @@ class PerformanceRNN(Model):
     def _sample_event(self, output, greedy=True, temperature=1.0):
         if greedy:
             return output.argmax(-1)
-        else:
-            output = output / temperature
-            probs = self.output_fc_activation(output)
-            return Categorical(probs).sample()
+        output = output / temperature
+        probs = self.output_fc_activation(output)
+        return Categorical(probs).sample()
 
     def forward(self, event, control=None, hidden=None):
         # One step forward
@@ -82,10 +78,10 @@ class PerformanceRNN(Model):
             assert control.shape == (1, batch_size, self.control_dim)
 
         concat = torch.cat([event, default, control], -1)
-        input = self.concat_input_fc(concat)
-        input = self.concat_input_fc_activation(input)
+        inp = self.concat_input_fc(concat)
+        inp = self.concat_input_fc_activation(inp)
 
-        _, hidden = self.gru(input, hidden)
+        _, hidden = self.gru(inp, hidden)
         output = hidden.permute(1, 0, 2).contiguous()
         output = output.view(batch_size, -1).unsqueeze(0)
         output = self.output_fc(output)
@@ -195,9 +191,9 @@ class PerformanceRNN(Model):
 
         if stochastic:
             # [batch, beam] Gumbel perturbed log probs of beams
-            beam_log_prob_perturbed = torch.zeros(
+            torch.zeros(
                 batch_size, current_beam_size).to(self.device)
-            beam_z = torch.full((batch_size, beam_size), float('inf'))
+            torch.full((batch_size, beam_size), float('inf'))
             gumbel_dist = Gumbel(0, 1)
 
         step_iter = range(steps)
@@ -228,7 +224,7 @@ class PerformanceRNN(Model):
             hidden = hidden.view(self.gru_layers, batch_size,
                                  current_beam_size, self.hidden_dim)
             logits = (logits / temperature).view(1, batch_size,
-                                                 current_beam_size, self.event_dim)  # [1, batch, cbeam, out]
+                                 current_beam_size, self.event_dim)
 
             beam_log_prob_expand = logits + \
                 beam_log_prob[None, :, :, None]  # [1, batch, cbeam, out]
@@ -239,14 +235,9 @@ class PerformanceRNN(Model):
                 beam_log_prob_expand_perturbed = beam_log_prob_expand + \
                     gumbel_dist.sample(beam_log_prob_expand.shape)
                 # [1, batch, cbeam]
-                beam_log_prob_Z, _ = beam_log_prob_expand_perturbed.max(-1)
+                _, _ = beam_log_prob_expand_perturbed.max(-1)
                 # print(beam_log_prob_Z)
                 beam_log_prob_expand_perturbed_normalized = beam_log_prob_expand_perturbed
-                # beam_log_prob_expand_perturbed_normalized = -torch.log(
-                #     torch.exp(-beam_log_prob_perturbed[None, :, :, None])
-                #     - torch.exp(-beam_log_prob_Z[:, :, :, None])
-                #     + torch.exp(-beam_log_prob_expand_perturbed)) # [1, batch, cbeam, out]
-                # beam_log_prob_expand_perturbed_normalized = beam_log_prob_perturbed[None, :, :, None] + beam_log_prob_expand_perturbed # [1, batch, cbeam, out]
 
                 beam_log_prob_expand_perturbed_normalized_batch = \
                     beam_log_prob_expand_perturbed_normalized.view(
@@ -254,9 +245,9 @@ class PerformanceRNN(Model):
                 _, top_indices = beam_log_prob_expand_perturbed_normalized_batch.topk(
                     beam_size, -1)  # [1, batch, cbeam]
 
-                beam_log_prob_perturbed = \
+                _ = \
                     torch.gather(
-                        beam_log_prob_expand_perturbed_normalized_batch, -1, top_indices)[0]  # [batch, beam]
+                        beam_log_prob_expand_perturbed_normalized_batch, -1, top_indices)[0]
 
             else:
                 _, top_indices = beam_log_prob_expand_batch.topk(beam_size, -1)
@@ -285,7 +276,8 @@ class PerformanceRNN(Model):
             event = torch.gather(event_index, -1, top_indices)
 
             beam_events = torch.gather(
-                beam_events[None], 2, beam_index_new.unsqueeze(-1).repeat(1, 1, 1, beam_events.shape[-1]))
+                beam_events[None], 2,
+                beam_index_new.unsqueeze(-1).repeat(1, 1, 1, beam_events.shape[-1]))
             beam_events = torch.cat([beam_events, event.unsqueeze(-1)], -1)[0]
 
             current_beam_size = beam_size
@@ -294,3 +286,6 @@ class PerformanceRNN(Model):
             batch_size).long(), beam_log_prob.argmax(-1)]
         best = best.contiguous().t()
         return best
+
+    def inference(self, **kwargs):
+        self.generate(**kwargs)

@@ -107,8 +107,7 @@ class MelGanSupervisor:
                 wt = D_weights * feat_weights
                 for i in range(self.hparams.num_D):
                     for j in range(len(D_fake[i]) - 1):
-                        loss_feat += wt * \
-                            F.l1_loss(D_fake[i][j], D_real[i][j].detach())
+                        loss_feat += wt * F.l1_loss(D_fake[i][j], D_real[i][j].detach())
 
                 self.netG.zero_grad()
                 (loss_G + self.hparams.lambda_feat * loss_feat).backward()
@@ -274,9 +273,7 @@ class MelGanSupervisor:
             )
         else:
             dataset = AudioDataset(
-                training_files=Path(
-                    self.hparams.processed_data_dir / "test_files.txt"
-                ),
+                training_files=Path(self.hparams.processed_data_dir / "test_files.txt"),
                 segment_length=self.hparams.sampling_rate * 4,
                 sampling_rate=self.hparams.sampling_rate,
                 augment=False,
@@ -297,8 +294,7 @@ class MelGanSupervisor:
 
     def load_pretrained(self):
         checkpoint = torch.load(self.hparams.default_checkpoint)
-        log_info("Loading checkpoint from pretrained from authors",
-                 checkpoint["step"])
+        log_info("Loading checkpoint from pretrained from authors", checkpoint["step"])
 
         self.netG.load_state_dict(checkpoint["netG"])
         self.optG.load_state_dict(checkpoint["optG"])

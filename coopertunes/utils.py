@@ -258,8 +258,8 @@ def transposition(events, controls, offset=0):
 
     assert ((0 <= events) & (events < EventSeq.dim())).all()
     histr = ControlSeq.feat_ranges()["pitch_histogram"]
-    controls[:, :, histr.start : histr.stop] = np.roll(
-        controls[:, :, histr.start : histr.stop], offset, -1
+    controls[:, :, histr.start: histr.stop] = np.roll(
+        controls[:, :, histr.start: histr.stop], offset, -1
     )
 
     return events, controls
@@ -267,17 +267,6 @@ def transposition(events, controls, offset=0):
 
 def dict2params(d, f=","):
     return f.join(f"{k}={v}" for k, v in d.items())
-
-
-def params2dict(p, f=",", e="="):
-    d = {}
-    for item in p.split(f):
-        item = item.split(e)
-        if len(item) < 2:
-            continue
-        k, *v = item
-        d[k] = eval("=".join(v))
-    return d
 
 
 def compute_gradient_norm(parameters, norm_type=2):
@@ -289,7 +278,10 @@ def compute_gradient_norm(parameters, norm_type=2):
     return total_norm
 
 
-def find_files_by_extensions(root, exts=[]):
+def find_files_by_extensions(root, exts=None):
+    if exts is None:
+        exts = []
+
     def _has_ext(name):
         if not exts:
             return True
