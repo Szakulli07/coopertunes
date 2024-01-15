@@ -10,7 +10,6 @@ from torch.utils.data import DataLoader
 from coopertunes.datasets import GANSynthDataset
 from coopertunes.hparams.GANSynth import GANSynthHParams
 from coopertunes.logger import Logger
-from coopertunes.models.GANSynth import Discriminator, Generator
 
 
 class GANSynthSupervisor:
@@ -34,8 +33,11 @@ class GANSynthSupervisor:
 
         self.train_loader = self._get_dataloader()
 
+        self.epoch = 0
+        self.step = 0
+
     def _get_dataloader(self):
-        dataset = GANSynthDataset(self.hparams, Path(self.hparams.train_data_dir))
+        dataset = GANSynthDataset(Path(self.hparams.train_data_dir))
         return DataLoader(
             dataset=dataset,
             batch_size=self.hparams.batch_size,
@@ -120,13 +122,3 @@ class GANSynthSupervisor:
 
         if self.step and self.step % self.hparams.steps_per_log == 0:
             self._logger.log_running_vals_to_tb(self.step)
-
-
-if __name__ == "__main__":
-    hparams = GANSynthHParams()
-    generator = Generator(hparams.generator)
-    discriminator = Discriminator(hparams.discriminator)
-    supervisor = GANSynthSupervisor(
-        (generator, discriminator), torch.device("cpu"), hparams
-    )
-    supervisor.train()

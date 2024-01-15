@@ -2,13 +2,11 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from coopertunes.hparams.GANSynth import (DiscriminatorHParams,
-                                          GANSynthHParams, GeneratorHParams)
+from coopertunes.hparams.GANSynth import DiscriminatorHParams, GeneratorHParams
 from coopertunes.utils import PixelNormalization, dconv_same_padding
 
 
 class Generator(nn.Module):
-
     def __init__(self, hparams: GeneratorHParams):
         super().__init__()
         self.activation_function = nn.LeakyReLU(hparams.leaky_relu_slope)
@@ -18,13 +16,22 @@ class Generator(nn.Module):
         dconv_kernel = hparams.block_dconv_kernel[block_idx]
         upsample = hparams.block_upsample_factor[block_idx]
         self.block0 = nn.Sequential(
-            nn.ConvTranspose2d(hparams.latent_dim + hparams.pitch_dim, dconv_filters, hparams.first_dconv_kernel),
+            nn.ConvTranspose2d(
+                hparams.latent_dim + hparams.pitch_dim,
+                dconv_filters,
+                hparams.first_dconv_kernel,
+            ),
             self.activation_function,
             PixelNormalization(hparams.eps),
-            nn.ConvTranspose2d(dconv_filters, dconv_filters, dconv_kernel, padding=dconv_same_padding(dconv_kernel)),
+            nn.ConvTranspose2d(
+                dconv_filters,
+                dconv_filters,
+                dconv_kernel,
+                padding=dconv_same_padding(dconv_kernel),
+            ),
             self.activation_function,
             PixelNormalization(hparams.eps),
-            nn.Upsample(scale_factor=upsample)
+            nn.Upsample(scale_factor=upsample),
         )
 
         block_idx += 1
@@ -33,13 +40,23 @@ class Generator(nn.Module):
         dconv_kernel = hparams.block_dconv_kernel[block_idx]
         upsample = hparams.block_upsample_factor[block_idx]
         self.block1 = nn.Sequential(
-            nn.ConvTranspose2d(previous_dconv_filters, dconv_filters, dconv_kernel, padding=dconv_same_padding(dconv_kernel)),
+            nn.ConvTranspose2d(
+                previous_dconv_filters,
+                dconv_filters,
+                dconv_kernel,
+                padding=dconv_same_padding(dconv_kernel),
+            ),
             self.activation_function,
             PixelNormalization(hparams.eps),
-            nn.ConvTranspose2d(dconv_filters, dconv_filters, dconv_kernel, padding=dconv_same_padding(dconv_kernel)),
+            nn.ConvTranspose2d(
+                dconv_filters,
+                dconv_filters,
+                dconv_kernel,
+                padding=dconv_same_padding(dconv_kernel),
+            ),
             self.activation_function,
             PixelNormalization(hparams.eps),
-            nn.Upsample(scale_factor=upsample)
+            nn.Upsample(scale_factor=upsample),
         )
 
         block_idx += 1
@@ -48,13 +65,23 @@ class Generator(nn.Module):
         dconv_kernel = hparams.block_dconv_kernel[block_idx]
         upsample = hparams.block_upsample_factor[block_idx]
         self.block2 = nn.Sequential(
-            nn.ConvTranspose2d(previous_dconv_filters, dconv_filters, dconv_kernel, padding=dconv_same_padding(dconv_kernel)),
+            nn.ConvTranspose2d(
+                previous_dconv_filters,
+                dconv_filters,
+                dconv_kernel,
+                padding=dconv_same_padding(dconv_kernel),
+            ),
             self.activation_function,
             PixelNormalization(hparams.eps),
-            nn.ConvTranspose2d(dconv_filters, dconv_filters, dconv_kernel, padding=dconv_same_padding(dconv_kernel)),
+            nn.ConvTranspose2d(
+                dconv_filters,
+                dconv_filters,
+                dconv_kernel,
+                padding=dconv_same_padding(dconv_kernel),
+            ),
             self.activation_function,
             PixelNormalization(hparams.eps),
-            nn.Upsample(scale_factor=upsample)
+            nn.Upsample(scale_factor=upsample),
         )
 
         block_idx += 1
@@ -63,13 +90,23 @@ class Generator(nn.Module):
         dconv_kernel = hparams.block_dconv_kernel[block_idx]
         upsample = hparams.block_upsample_factor[block_idx]
         self.block3 = nn.Sequential(
-            nn.ConvTranspose2d(previous_dconv_filters, dconv_filters, dconv_kernel, padding=dconv_same_padding(dconv_kernel)),
+            nn.ConvTranspose2d(
+                previous_dconv_filters,
+                dconv_filters,
+                dconv_kernel,
+                padding=dconv_same_padding(dconv_kernel),
+            ),
             self.activation_function,
             PixelNormalization(hparams.eps),
-            nn.ConvTranspose2d(dconv_filters, dconv_filters, dconv_kernel, padding=dconv_same_padding(dconv_kernel)),
+            nn.ConvTranspose2d(
+                dconv_filters,
+                dconv_filters,
+                dconv_kernel,
+                padding=dconv_same_padding(dconv_kernel),
+            ),
             self.activation_function,
             PixelNormalization(hparams.eps),
-            nn.Upsample(scale_factor=upsample)
+            nn.Upsample(scale_factor=upsample),
         )
 
         block_idx += 1
@@ -78,13 +115,23 @@ class Generator(nn.Module):
         dconv_kernel = hparams.block_dconv_kernel[block_idx]
         upsample = hparams.block_upsample_factor[block_idx]
         self.block4 = nn.Sequential(
-            nn.ConvTranspose2d(previous_dconv_filters, dconv_filters, dconv_kernel, padding=dconv_same_padding(dconv_kernel)),
+            nn.ConvTranspose2d(
+                previous_dconv_filters,
+                dconv_filters,
+                dconv_kernel,
+                padding=dconv_same_padding(dconv_kernel),
+            ),
             self.activation_function,
             PixelNormalization(hparams.eps),
-            nn.ConvTranspose2d(dconv_filters, dconv_filters, dconv_kernel, padding=dconv_same_padding(dconv_kernel)),
+            nn.ConvTranspose2d(
+                dconv_filters,
+                dconv_filters,
+                dconv_kernel,
+                padding=dconv_same_padding(dconv_kernel),
+            ),
             self.activation_function,
             PixelNormalization(hparams.eps),
-            nn.Upsample(scale_factor=upsample)
+            nn.Upsample(scale_factor=upsample),
         )
 
         block_idx += 1
@@ -93,13 +140,23 @@ class Generator(nn.Module):
         dconv_kernel = hparams.block_dconv_kernel[block_idx]
         upsample = hparams.block_upsample_factor[block_idx]
         self.block5 = nn.Sequential(
-            nn.ConvTranspose2d(previous_dconv_filters, dconv_filters, dconv_kernel, padding=dconv_same_padding(dconv_kernel)),
+            nn.ConvTranspose2d(
+                previous_dconv_filters,
+                dconv_filters,
+                dconv_kernel,
+                padding=dconv_same_padding(dconv_kernel),
+            ),
             self.activation_function,
             PixelNormalization(hparams.eps),
-            nn.ConvTranspose2d(dconv_filters, dconv_filters, dconv_kernel, padding=dconv_same_padding(dconv_kernel)),
+            nn.ConvTranspose2d(
+                dconv_filters,
+                dconv_filters,
+                dconv_kernel,
+                padding=dconv_same_padding(dconv_kernel),
+            ),
             self.activation_function,
             PixelNormalization(hparams.eps),
-            nn.Upsample(scale_factor=upsample)
+            nn.Upsample(scale_factor=upsample),
         )
 
         block_idx += 1
@@ -107,13 +164,23 @@ class Generator(nn.Module):
         dconv_filters = hparams.block_dconv_filters[block_idx]
         dconv_kernel = hparams.block_dconv_kernel[block_idx]
         self.block6 = nn.Sequential(
-            nn.ConvTranspose2d(previous_dconv_filters, dconv_filters, dconv_kernel, padding=dconv_same_padding(dconv_kernel)),
+            nn.ConvTranspose2d(
+                previous_dconv_filters,
+                dconv_filters,
+                dconv_kernel,
+                padding=dconv_same_padding(dconv_kernel),
+            ),
             self.activation_function,
             PixelNormalization(hparams.eps),
-            nn.ConvTranspose2d(dconv_filters, dconv_filters, dconv_kernel, padding=dconv_same_padding(dconv_kernel)),
+            nn.ConvTranspose2d(
+                dconv_filters,
+                dconv_filters,
+                dconv_kernel,
+                padding=dconv_same_padding(dconv_kernel),
+            ),
             self.activation_function,
             PixelNormalization(hparams.eps),
-            nn.ConvTranspose2d(dconv_filters, 2, 1)
+            nn.ConvTranspose2d(dconv_filters, 2, 1),
         )
 
     def forward(self, z, pitch):
@@ -130,7 +197,6 @@ class Generator(nn.Module):
 
 
 class Discriminator(nn.Module):
-
     def __init__(self, hparams: DiscriminatorHParams):
         super().__init__()
         self.activation_function = nn.LeakyReLU(hparams.leaky_relu_slope)
@@ -145,7 +211,7 @@ class Discriminator(nn.Module):
             self.activation_function,
             nn.Conv2d(conv_filters, conv_filters, conv_kernel, padding="same"),
             self.activation_function,
-            nn.AvgPool2d(downsample)
+            nn.AvgPool2d(downsample),
         )
 
         block_idx += 1
@@ -158,7 +224,7 @@ class Discriminator(nn.Module):
             self.activation_function,
             nn.Conv2d(conv_filters, conv_filters, conv_kernel, padding="same"),
             self.activation_function,
-            nn.AvgPool2d(downsample)
+            nn.AvgPool2d(downsample),
         )
 
         block_idx += 1
@@ -171,7 +237,7 @@ class Discriminator(nn.Module):
             self.activation_function,
             nn.Conv2d(conv_filters, conv_filters, conv_kernel, padding="same"),
             self.activation_function,
-            nn.AvgPool2d(downsample)
+            nn.AvgPool2d(downsample),
         )
 
         block_idx += 1
@@ -184,7 +250,7 @@ class Discriminator(nn.Module):
             self.activation_function,
             nn.Conv2d(conv_filters, conv_filters, conv_kernel, padding="same"),
             self.activation_function,
-            nn.AvgPool2d(downsample)
+            nn.AvgPool2d(downsample),
         )
 
         block_idx += 1
@@ -197,7 +263,7 @@ class Discriminator(nn.Module):
             self.activation_function,
             nn.Conv2d(conv_filters, conv_filters, conv_kernel, padding="same"),
             self.activation_function,
-            nn.AvgPool2d(downsample)
+            nn.AvgPool2d(downsample),
         )
 
         block_idx += 1
@@ -210,7 +276,7 @@ class Discriminator(nn.Module):
             self.activation_function,
             nn.Conv2d(conv_filters, conv_filters, conv_kernel, padding="same"),
             self.activation_function,
-            nn.AvgPool2d(downsample)
+            nn.AvgPool2d(downsample),
         )
 
         block_idx += 1
@@ -238,16 +304,3 @@ class Discriminator(nn.Module):
         dis_out = self.discriminator_output(x)
         pitch = F.softmax(self.pitch_classifier(x), dim=0)
         return (dis_out, pitch)
-
-
-if __name__ == "__main__":
-    batch_size = 16
-    hparams = GANSynthHParams()
-    generator = Generator(hparams.generator)
-    discriminator = Discriminator(hparams.discriminator)
-    noise = torch.randn(batch_size, 256)
-    pitch = torch.zeros(batch_size, 61)
-    pitch[:, 3] = 1
-    x = generator(noise, pitch)
-    y = discriminator(x)
-    i = 0

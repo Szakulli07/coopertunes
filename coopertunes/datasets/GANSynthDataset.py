@@ -6,15 +6,13 @@ import torchaudio
 from torch.utils.data import Dataset
 from torch.nn import functional as F
 
-from coopertunes.hparams.hparams import HParams
-
 
 class GANSynthDataset(Dataset):
     """
     Dataset for NSynth [json/wav] - https://magenta.tensorflow.org/datasets/nsynth
     """
 
-    def __init__(self, hparams: HParams, train_data_dir: Path):
+    def __init__(self, train_data_dir: Path):
         super().__init__()
         with (train_data_dir / "examples.json").open() as f:
             self.metadata = json.load(f)
