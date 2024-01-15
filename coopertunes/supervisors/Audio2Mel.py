@@ -5,7 +5,9 @@ from coopertunes.hparams import Audio2MelHParams
 
 
 class Audio2MelSupervisor:
-    def __init__(self, model: Audio2Mel, device: torch.device, hparams: Audio2MelHParams):
+    def __init__(
+        self, model: Audio2Mel, device: torch.device, hparams: Audio2MelHParams
+    ):
         self.model = model.to(device)
         self.hparams = hparams
         self.device = device

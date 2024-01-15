@@ -28,6 +28,7 @@ dependencies = [
   "torch-summary==1.4.5",
   "pretty_midi==0.2.10",
   "progress==1.6"]
+  "black==23.12.1"]
 
 [project.urls]
 "Homepage" = "https://github.com/Szakulli07/coopertunes"

@@ -13,9 +13,10 @@ class MelGanHParams(HParams):
     def __init__(self, hparams: Optional[Union[Path, dict[str, Any]]] = None):
         super().__init__()
 
-        self.summary_path = os.path.join("models", "summary")
-        self.default_checkpoint = os.path.join(
-            "coopertunes", "checkpoints", "melgan_pretrained.pt")
+        self.summary_path = Path("models/summary")
+        self.default_checkpoint = Path(
+            "coopertunes/checkpoints/melgan_pretrained.pt"
+        )
 
         # Model
         self.seq_len: int = 8192
