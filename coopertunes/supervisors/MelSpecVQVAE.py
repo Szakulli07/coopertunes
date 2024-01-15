@@ -8,6 +8,7 @@ from einops import rearrange
 from torch.utils.data import DataLoader
 
 from coopertunes.datasets import MelDataset
+
 from coopertunes.distributed import get_world_size, global_rank, is_global_leader
 from coopertunes.hparams import MelSpecVQVAEHParams
 from coopertunes.logger import Logger
@@ -237,7 +238,9 @@ if __name__ == "__main__":
 
     mel_hparams = MelSpecVQVAEHParams()
     mel_spec_vae = MelSpecVQVAE(mel_hparams)
+
     summary(mel_spec_vae)
+
     torch.distributed.init_process_group(
         backend="nccl",
         init_method=f'tcp://{os.getenv("MASTER_ADDR")}:{os.getenv("MASTER_PORT")}',

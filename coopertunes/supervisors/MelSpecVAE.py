@@ -245,4 +245,5 @@ if __name__ == "__main__":
     vae_supervisor = MelSpecVAESupervisor(
         mel_spec_vae, torch.device("cuda"), mel_hparams
     )
+
     vae_supervisor.train()

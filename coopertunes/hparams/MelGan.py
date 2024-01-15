@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Any, Optional, Union
 
@@ -14,7 +15,7 @@ class MelGanHParams(HParams):
 
         self.summary_path = Path("models/summary")
         self.default_checkpoint = Path(
-            "coopertunes/checkpoints/MelGan/multi_speaker.pt"
+            "coopertunes/checkpoints/melgan_pretrained.pt"
         )
 
         # Model

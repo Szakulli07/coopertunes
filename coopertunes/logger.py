@@ -41,9 +41,10 @@ class Logger:
 
     def _init_utils_fn(self):
         log_fn_dict = {
-            "melspecvae": (self._log_step_vae, self._log_mel_batch),
-            "melspecvqvae": (self._log_step_vqvae, self._log_mel_batch),
-            "melgan": (self._log_step_melgan, self._log_audio_melgan),
+            'melspecvae': (self._log_step_vae, self._log_mel_batch),
+            'melspecvqvae': (self._log_step_vqvae, self._log_mel_batch),
+            'melgan': (self._log_step_melgan, self._log_audio_melgan),
+            'performancernn': (self._log_step_perfrnn, None),
             "gansynth": (self._log_step_gan_synth, None),
         }
         return log_fn_dict[self.model_name]
@@ -68,6 +69,21 @@ class Logger:
             mean(self._running_vals[f"{prefix}/discriminator"]),
             mean(self._running_vals[f"{prefix}/generator"]),
             mean(self._running_vals[f"{prefix}/step_time"]),
+        )
+
+    def _log_step_perfrnn(
+        self,
+        step: int,
+        prefix: Literal['training', 'validation'] = 'training',
+    ):
+        log_info(
+            'Step: %d |\
+                LossGenerator: %.4f | GradientNorm: %.4f |\
+                StepTime: %.2f[s]',
+            step,
+            mean(self._running_vals[f'{prefix}/generator']),
+            mean(self._running_vals[f'{prefix}/gradient_norm']),
+            mean(self._running_vals[f'{prefix}/step_time']),
         )
 
     def _log_step_vae(
